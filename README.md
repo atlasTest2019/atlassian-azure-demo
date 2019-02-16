@@ -1,8 +1,5 @@
 # Atlassian Data Center Azure Templates
 
-## Note
-Please note that these templates are for evaluation or 'proof of concept' deployments. These are not currently recommended for a production deployment 'as is' and will require adjustment to meet your needs.
-
 ## Purpose
 This repository contains Azure ARM templates to install the following [Atlassian Data Center](https://www.atlassian.com/enterprise/data-center) products:  
 

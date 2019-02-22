@@ -24,6 +24,13 @@
                 "description": "The (optional) Shared Access Signature (SAS) token that provides access to resources in the storage account."
             }
         },
+        "isMarketplaceDeployment": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "If these templates are being deployed via the Azure Marketplace."
+            }
+        },
         "confluenceVersion": {
             "type": "string",
             "defaultValue": "latest",
@@ -634,7 +641,7 @@
                         "value": "[if(variables('isConfClusterSizeUsed'), int(variables('clusterLookup').clusterSize[parameters('confClusterSize')]), parameters('clusterSize'))]"
                     },
                     "clusterVmSize": {
-                        "value": "[if(variables('isConfClusterSizeUsed'), variables('clusterLookup').clusterVmSize[parameters('confClusterSize')], parameters('clusterVmSize'))]"
+                        "value": "[if(and(not(parameters('isMarketplaceDeployment')), variables('isConfClusterSizeUsed')), variables('clusterLookup').clusterVmSize[parameters('confClusterSize')], parameters('clusterVmSize'))]"
                     },
                     "appGtwyClusterSize": {
                         "value": "[if(variables('isConfClusterSizeUsed'), int(variables('clusterLookup').appGtwySize[parameters('confClusterSize')]), parameters('appGtwyClusterSize'))]"

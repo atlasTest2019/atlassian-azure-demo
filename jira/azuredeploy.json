@@ -24,6 +24,13 @@
                 "description": "The Shared Access Signature (SAS) token that provides access to resources in the storage account."
             }
         },
+        "isMarketplaceDeployment": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "If these templates are being deployed via the Azure Marketplace."
+            }
+        },
         "jiraProduct": {
             "type": "string",
             "allowedValues": [
@@ -540,8 +547,8 @@
                 "trial": 1,
                 "small": 2,
                 "medium": 3,
-                "large": 8,
-                "enterprise": 10
+                "large": 6,
+                "enterprise": 6
             },
             "jumpboxVmSize": {
                 "trial": "Standard_B1s",
@@ -627,7 +634,7 @@
                         "value": "[if(variables('isJiraClusterSizeUsed'), int(variables('clusterLookup').clusterSize[parameters('jiraClusterSize')]), parameters('clusterSize'))]"
                     },
                     "clusterVmSize": {
-                        "value": "[if(variables('isJiraClusterSizeUsed'), variables('clusterLookup').clusterVmSize[parameters('jiraClusterSize')], parameters('clusterVmSize'))]"
+                        "value": "[if(and(not(parameters('isMarketplaceDeployment')), variables('isJiraClusterSizeUsed')), variables('clusterLookup').clusterVmSize[parameters('jiraClusterSize')], parameters('clusterVmSize'))]"
                     },
                     "dbCreateNew": {
                         "value": "[parameters('dbCreateNew')]"

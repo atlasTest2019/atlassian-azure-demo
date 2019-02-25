@@ -174,7 +174,7 @@
 							"sku": "16.04-LTS"
 						},
 						"count": 1,
-						"visible": "[equals('trial', steps('administrator').jiraClusterSize)]"
+						"visible": "[equals('trial', steps('administrator').confClusterSize)]"
 					},
 					{
 						"name": "smallClusterVmSize",
@@ -244,7 +244,7 @@
 							"sku": "16.04-LTS"
 						},
 						"count": 2,
-						"visible": "[equals('small', steps('administrator').jiraClusterSize)]"
+						"visible": "[equals('small', steps('administrator').confClusterSize)]"
 					},
 					{
 						"name": "mediumClusterVmSize",
@@ -316,7 +316,7 @@
 							"sku": "16.04-LTS"
 						},
 						"count": 3,
-						"visible": "[equals('medium', steps('administrator').jiraClusterSize)]"
+						"visible": "[equals('medium', steps('administrator').confClusterSize)]"
 					},
 					{
 						"name": "largeClusterVmSize",
@@ -408,7 +408,7 @@
 							"sku": "16.04-LTS"
 						},
 						"count": 6,
-						"visible": "[equals('large', steps('administrator').jiraClusterSize)]"
+						"visible": "[equals('large', steps('administrator').confClusterSize)]"
 					},
 					{
 						"name": "enterpriseClusterVmSize",
@@ -493,7 +493,7 @@
 							"sku": "16.04-LTS"
 						},
 						"count": 6,
-						"visible": "[equals('enterprise', steps('administrator').jiraClusterSize)]"
+						"visible": "[equals('enterprise', steps('administrator').confClusterSize)]"
 					}
 				]
 			},

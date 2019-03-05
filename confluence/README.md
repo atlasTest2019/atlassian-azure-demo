@@ -10,7 +10,7 @@ The original version of the Azure templates created a standalone Synchrony clust
 
 [![Deploy Confluence Data Center to Azure Portal](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbitbucket.org%2Fatlassian%2Fatlassian-azure-deployment%2Fraw%2Fmaster%2Fconfluence%2Fazuredeploy.json)
 
-NB. The current Azure deployment utilises certain Azure functionality like App Insights, Azure Monitoring, SQL Analytics etc that are still in Preview mode and not available in most regions. To ensure you can utilise these technologies deploy into the following regions:  
+Note: The current Azure deployment utilizes certain Azure functionality like App Insights, Azure Monitoring, SQL Analytics etc that are still in Preview mode and not available in most regions. To ensure you can utilize these technologies deploy into the following regions:  
 
 1. Canada Central  
 2. Central India  

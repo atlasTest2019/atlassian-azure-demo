@@ -30,6 +30,20 @@
             },
             "defaultValue": ""
         },
+        "bitbucketVersion": {
+            "type": "string",
+            "defaultValue": "latest",
+            "metadata": {
+                "description": "The Bitbucket software product version to install. You can also specify 'latest' to download the latest version available. If using with customDownloadUrl you have to specify the correct version."
+            }
+        },
+        "customDownloadUrl": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Use this URL to override standard Atlassian download url eg for EAP, RC versions. NB will be used in conjunction with the bitbucketVersion parameter."
+            }
+        },
         "location": {
             "type": "string",
             "defaultValue": "[resourceGroup().location]",
@@ -1307,7 +1321,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "bash install.sh nfs"
+                            "commandToExecute": "[concat('BBS_VERSION=\"', parameters('bitbucketVersion'), '\" ', 'BBS_INSTALLER_DOWNLOAD_URL=\"', parameters('customDownloadUrl'), '\" ', ' bash install.sh nfs')]"
                         }
                     }
                 }

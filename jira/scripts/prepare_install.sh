@@ -101,8 +101,12 @@ function install_redhat_epel_if_needed {
 }
 
 function install_core_dependencies {
-  pacapt update
+  pacapt update --noconfirm
+  # Packages done on different lines as yum command will fail if unknown package defined. Some future proofing.
   pacapt install --noconfirm cifs-utils
+  pacapt install --noconfirm curl
+  pacapt install --noconfirm rsync
+  pacapt install --noconfirm netcat
   pacapt install --noconfirm jq
 
   # nc/nmap-ncat needed on RHEL jumpbox for SSH proxying
@@ -240,7 +244,7 @@ function mount_share {
   echo "password=${STORAGE_KEY}" >> ${creds_file}
   chmod 600 ${creds_file}
   
-  log "mounting share $share_name at ${ATL_JIRA_SHARED_HOME}"
+  log "mounting share ${mount_share} at ${ATL_JIRA_SHARED_HOME} with options: ${mount_options}"
   
   if [ $(cat /etc/mtab | grep -o "${ATL_JIRA_SHARED_HOME}") ];
   then
@@ -327,7 +331,7 @@ function hydrate_shared_config {
 }
 
 function copy_artefacts {
-  local excluded_files=(std* version installer *.jar prepare_install.sh *.py *.sh *.template *.sql *.js *.xsl)
+  local excluded_files=(std* version installer *.jar prepare_install.sh *.py *.sh *.template *.sql *.js *.xsl *.rpm)
 
   local exclude_rules=""
   for file in ${excluded_files[@]};

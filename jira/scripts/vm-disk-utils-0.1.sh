@@ -66,7 +66,9 @@ fi
 # Base path for data disk mount points
 DATA_BASE="/datadisks"
 # Mount options for data disk
-MOUNT_OPTIONS="noatime,nodiratime,nodev,noexec,nosuid,nofail,barrier=0"
+MOUNT_OPTIONS="noatime,nodiratime,nodev,noexec,nosuid,nofail"
+# Determines wheter partition and format data disks as raid set or not
+RAID_CONFIGURATION=0
 
 while getopts b:sho: optname; do
     log "Option $optname set with value ${OPTARG}"
@@ -280,9 +282,9 @@ create_striped_volume()
 	done
 
     MDDEVICE=$(get_next_md_device)    
-	sudo udevadm control --stop-exec-queue
-	mdadm --create ${MDDEVICE} --level 0 --raid-devices ${#PARTITIONS[@]} ${PARTITIONS[*]}
-	sudo udevadm control --start-exec-queue
+	udevadm control --stop-exec-queue
+	mdadm --create ${MDDEVICE} --level 0 -c 64 --raid-devices ${#PARTITIONS[@]} ${PARTITIONS[*]}
+	udevadm control --start-exec-queue
 	
 	MOUNTPOINT=$(get_next_mountpoint)
 	echo "Next mount point appears to be ${MOUNTPOINT}"
@@ -305,8 +307,8 @@ create_striped_volume()
 check_mdadm() {
     dpkg -s mdadm >/dev/null 2>&1
     if [ ${?} -ne 0 ]; then
-        (apt-get -y update || (sleep 15; apt-get -y update)) > /dev/null
-        DEBIAN_FRONTEND=noninteractive sudo apt-get -y install mdadm --fix-missing
+        (pacapt update --noconfirm || (sleep 15; pacapt update --noconfirm)) > /dev/null
+        pacapt install --noconfirm mdadm
     fi
 }
 

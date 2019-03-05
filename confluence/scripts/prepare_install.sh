@@ -29,13 +29,6 @@ function error {
   exit 3
 }
 
-function enable_rc_local {
-  atl_log enable_rc_local "Enabling rc.local execution on system startup"
-  systemd enable rc-local.service
-  [ ! -f /etc/rc.local ] && (echo '#!/bin/sh' > /etc/rc.local)
-  [ ! -x /etc.rc.local ] && chmod +x /etc/rc.local
-}
-
 function tune_tcp_keepalive_for_azure {
   # Values taken from https://docs.microsoft.com/en-us/sql/connect/jdbc/connecting-to-an-azure-sql-database
   # Windows values are milliseconds, Linux values are seconds
@@ -88,9 +81,30 @@ function download_installer {
   fi
 }
 
-function install_jq {
-  apt-get update
-  apt-get -qqy install jq
+function install_pacapt {
+  wget -O /usr/local/bin/pacapt https://github.com/icy/pacapt/raw/ng/pacapt
+  sudo chmod 755 /usr/local/bin/pacapt
+}
+
+function install_redhat_epel_if_needed {
+  if [[ -n ${IS_REDHAT} ]]
+  then
+	  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+	  yum install -y ./epel-release-latest-*.noarch.rpm
+  fi
+}
+
+function install_core_dependencies {
+  pacapt update --noconfirm
+  # Packages done on different lines as yum command will fail if unknown package defined. Some future proofing.
+  pacapt install --noconfirm cifs-utils
+  pacapt install --noconfirm curl
+  pacapt install --noconfirm rsync
+  pacapt install --noconfirm netcat
+  pacapt install --noconfirm jq
+
+  # nc/nmap-ncat needed on RHEL jumpbox for SSH proxying
+  [ -n "${IS_REDHAT}" ] && pacapt install --noconfirm java-1.8.0-openjdk-headless nc || pacapt install --noconfirm openjdk-8-jre-headless
 }
 
 function prepare_password_generator {
@@ -98,12 +112,21 @@ function prepare_password_generator {
 }
 
 function install_password_generator {
-  apt-get -qqy install openjdk-8-jre-headless
-  apt-get -qqy install maven
-  mvn dependency:get -DremoteRepositories="${ATLASSIAN_MAVEN_REPOSITORY_URL}" -Dartifact=com.atlassian.security:atlassian-password-encoder:3.2.3 -Dtransitive=false -Ddest=.
-  mvn dependency:get -Dartifact=commons-lang:commons-lang:2.6 -Dtransitive=false -Ddest=.
-  mvn dependency:get -Dartifact=commons-codec:commons-codec:1.9 -Dtransitive=false -Ddest=.
-  mvn dependency:get -Dartifact=org.bouncycastle:bcprov-jdk15on:1.50 -Dtransitive=false -Ddest=.
+  atl_log install_password_generator "Downloading Password Generator Jars"
+  JARS="https://maven.atlassian.com/content/repositories/atlassian-public/com/atlassian/security/atlassian-password-encoder/3.2.3/atlassian-password-encoder-3.2.3.jar \
+	  http://central.maven.org/maven2/commons-lang/commons-lang/2.6/commons-lang-2.6.jar \
+	  http://central.maven.org/maven2/commons-codec/commons-codec/1.9/commons-codec-1.9.jar \
+	  https://maven.atlassian.com/content/repositories/atlassian-public/com/atlassian/extras/atlassian-extras/3.2/atlassian-extras-3.2.jar \
+    http://central.maven.org/maven2/org/liquibase/liquibase-core/3.5.3/liquibase-core-3.5.3.jar \
+    http://central.maven.org/maven2/org/bouncycastle/bcprov-jdk15on/1.50/bcprov-jdk15on-1.50.jar"
+
+  for aJar in $(echo $JARS)
+  do
+    if [[ ! -f $(basename $aJar) ]]
+    then
+      curl -LO ${aJar}
+    fi
+  done
 }
 
 function run_password_generator {
@@ -111,17 +134,6 @@ function run_password_generator {
 }
 
 function prepare_server_id_generator {
-  apt-get -qqy install openjdk-8-jre-headless
-  apt-get -qqy install maven
-
-  log "Downloading artifacts to prepare Server Id generator"
-
-  if ! [ -f atlassian-extras-3.2.jar ]; then
-    mvn dependency:get -DremoteRepositories="${ATLASSIAN_MAVEN_REPOSITORY_URL}" -Dartifact=com.atlassian.extras:atlassian-extras:3.2 -Dtransitive=false -Ddest=.
-  fi
-
-  log "Artefacts are ready"
-
   log "Preparing Server Id generation script"
   echo "${ATL_GENERATE_SERVER_ID_SCRIPT}" > generate-serverid.js
   log "Server Id generation script is ready"
@@ -129,23 +141,6 @@ function prepare_server_id_generator {
 
 function generate_server_id {
   jjs -cp atlassian-extras-3.2.jar generate-serverid.js
-}
-
-function prepare_jwt_keypair_generator {
-  apt-get -qqy install openjdk-8-jre-headless
-  apt-get -qqy install maven
-
-  log "Downloading artifacts to prepare JWT keypair generator"
-
-  if ! [ -f commons-codec-1.9.jar ]; then
-    mvn dependency:get -Dartifact=commons-codec:commons-codec:1.9 -Dtransitive=false -Ddest=.
-  fi
-
-  log "Artefacts are ready"
-
-  log "Preparing JWT keypair generation script"
-  echo "${ATL_GENERATE_JWT_KEYPAIR_SCRIPT}" > genkeypair.js
-  log "JWT keypair generation script is ready"
 }
 
 function generate_jwt_keypair {
@@ -246,7 +241,7 @@ function mount_share {
   echo "password=${STORAGE_KEY}" >> ${creds_file}
   chmod 600 ${creds_file}
 
-  log "mounting share $share_name at ${ATL_CONFLUENCE_SHARED_HOME}"
+  log "mounting share ${mount_share} at ${ATL_CONFLUENCE_SHARED_HOME} with options: ${mount_options}"
 
   if [ $(cat /etc/mtab | grep -o "${ATL_CONFLUENCE_SHARED_HOME}") ];
   then
@@ -337,7 +332,7 @@ function hydrate_shared_config {
   do
     output_file=`echo "${template_file}" | sed 's/\.template$//'`
     atl_log hydrate_shared_config "Start hydrating '${template_file}' into '${output_file}'"
-    cat ${template_file} | python3 hydrate_confluence_config.py > ${output_file}
+    cat ${template_file} | python hydrate_confluence_config.py > ${output_file}
     atl_log hydrate_shared_config "Hydrated '${template_file}' into '${output_file}'"
   done
 }
@@ -369,20 +364,12 @@ function hydrate_db_dump {
   local template_file=$(ls -C1 *_db.sql.template)
   local output_file=`echo "${template_file}" | sed 's/\.template$//'`
 
-  cat ${template_file} | python3 hydrate_confluence_config.py > ${output_file}
+  cat ${template_file} | python hydrate_confluence_config.py > ${output_file}
   log "Hydrated '${template_file}' into '${output_file}'"
-}
-
-function install_liquibase {
-  atl_log install_liquibase "Downloading liquibase"
-  mvn dependency:get -Dartifact=org.liquibase:liquibase-core:3.5.3 -Dtransitive=false -Ddest=.
-  atl_log install_liquibase "Liquibase has been downloaded"
 }
 
 function prepare_database {
   atl_log prepare_database "Installing liquibase"
-  install_liquibase
-  atl_log prepare_database "liquibase has been installed"
   atl_log prepare_database "ready to hydrate db dump"
   hydrate_db_dump
 }
@@ -582,7 +569,7 @@ function install_appinsights {
   if [ -n "${APPINSIGHTS_INSTRUMENTATION_KEY}" ] 
   then 
      atl_log install_appinsights "Installing App Insights"
-     apt-get -qqy install xsltproc
+     pacapt install --noconfirm xsltproc
      download_appinsights_jars ${ATL_CONFLUENCE_INSTALL_DIR}/confluence/WEB-INF/lib
 
      cp -fp ${ATL_CONFLUENCE_INSTALL_DIR}/confluence/WEB-INF/web.xml ${ATL_CONFLUENCE_INSTALL_DIR}/confluence/WEB-INF/web.xml.orig
@@ -595,14 +582,40 @@ function install_appinsights {
   fi
 }
 
+function check_collectd_java_linking {
+  # https://github.com/collectd/collectd/issues/635
+  # Applied to both RHEL 7.5, Ubuntu 18.04 (but not 16.04)
+  [ -n "$(ldd /usr/lib/collectd/java.so | grep 'not found')" ] && atl_log check_collectd_java_linking "CollectD Java linking error found!!"
+}
+
 function install_appinsights_collectd {
   # Have moved collectd to run after Confluence startup - doesn't start up well with all the mounting/remounting/Confluence not being up.
   if [ -n "${APPINSIGHTS_INSTRUMENTATION_KEY}" ]
   then
     atl_log install_appinsights_collectd "Configuring collectd to publish Confluence JMX"
-    apt-get -qqy install collectd
-    cp -fp ${ATL_CONFLUENCE_SHARED_HOME}/confluence-collectd.conf /etc/collectd/collectd.conf
-    chmod +r /etc/collectd/collectd.conf
+    if [[ -n ${IS_REDHAT} ]]
+    then
+      # https://bugs.centos.org/view.php?id=15495
+      pacapt install --noconfirm install collectd collectd-generic-jmx.x86_64 collectd-java.x86_64 collectd-sensors.x86_64 collectd-rrdtool.x86_64 glib2.x86_64
+      ln -sf /usr/lib64/collectd /usr/lib/collectd
+
+      # https://github.com/collectd/collectd/issues/635
+      ln -sf /etc/alternatives/jre/lib/amd64/server/libjvm.so /lib64
+      check_collectd_java_linking
+      cp -fp ${ATL_CONFLUENCE_SHARED_HOME}/confluence-collectd.conf /etc/collectd.d
+      chmod +r /etc/collectd.d/*.conf
+
+      # Disable SELINUX - prevents Collectd logfile writing to /var/log
+      # https://serverfault.com/questions/797039/collectd-permission-denied-to-log-file
+      setenforce 0
+      sed --in-place=.bak 's/SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+    else
+      pacapt install --noconfirm collectd
+      ln -sf /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so /lib/x86_64-linux-gnu/
+      check_collectd_java_linking
+      cp -fp ${ATL_CONFLUENCE_SHARED_HOME}/confluence-collectd.conf /etc/collectd/collectd.conf
+      chmod +r /etc/collectd/collectd.conf
+    fi
 
     atl_log download_appinsights_jars "Copying collectd appinsights jar to /usr/share/collectd/java"
     cp -fp applicationinsights-collectd*.jar /usr/share/collectd/java/
@@ -672,7 +685,7 @@ function configure_cluster {
     local template_file=${template_files[$config_file_idx]}
     local output_file=${template_destination[$config_file_idx]}
     log "Start hydrating '${template_file}' into '${output_file}'"
-    cat ${template_file} | python3 hydrate_confluence_config.py > ${output_file}
+    cat ${template_file} | python hydrate_confluence_config.py > ${output_file}
     log "Hydrated '${template_file}' into '${output_file}'"
   done
 
@@ -716,7 +729,7 @@ function configure_confluence {
     local output_file=${confluence_configs_dest[$config_file_idx]}
     if [ -f ${template_file} ] ; then
       log "Start hydrating '${template_file}' into '${output_file}'"
-      cat ${template_file} | python3 hydrate_confluence_config.py > ${output_file}
+      cat ${template_file} | python hydrate_confluence_config.py > ${output_file}
       log "Hydrated '${template_file}' into '${output_file}'"
     else
       error "${template_file} not found"
@@ -794,6 +807,15 @@ function install_oms_linx_agent {
   fi
 }
 
+function disable_rhel_firewall {
+  if [[ -n ${IS_REDHAT} ]]
+  then
+    atl_log disable_rhel_firewall  "Disabling RHEL Firewall - using Azure Cluster NSG to maintain access rules"
+    systemctl stop firewalld.service
+    systemctl disable firewalld.service
+  fi
+}
+
 function preloadDatabase {
   atl_log preloadDatabase  "Preloading new database"
   prepare_password_generator
@@ -805,7 +827,7 @@ function preloadDatabase {
 }
 
 function prepare_install {
-  enable_rc_local
+  env | sort
   tune_tcp_keepalive_for_azure
   prepare_share
   download_installer
@@ -836,6 +858,7 @@ function install_confluence {
   install_oms_linx_agent
   systemctl enable confluence
   log "Done installing CONFLUENCE! Starting..."
+  disable_rhel_firewall
   env -i systemctl start confluence
   wait_until_startup_complete
   install_appinsights_collectd
@@ -843,8 +866,17 @@ function install_confluence {
   copy_artefacts
 }
 
+# Spit out args
+for (( i=1; i<="$#"; i++ ))
+do
+  atl_log main "Arg $i: ${!i}"
+done
 
-install_jq
+IS_REDHAT=$(cat /etc/os-release | egrep '^ID' | grep rhel)
+install_pacapt
+install_redhat_epel_if_needed
+install_core_dependencies
+
 #$1 is the storage key, $3 is the fqdn of the ip address, $4 is the fqdn of the database server
 prepare_env $1 $3 $4
 

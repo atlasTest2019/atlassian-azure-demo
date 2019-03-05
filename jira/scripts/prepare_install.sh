@@ -734,9 +734,12 @@ function set_shared_home_permissions {
 }
 
 function install_oms_linux_agent {
-  atl_log install_oms_linx_agent  "Installing OMS Linux Agent with workspace id: ${OMS_WORKSPACE_ID} and primary key: ${OMS_PRIMARY_KEY}"
-  wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w "${OMS_WORKSPACE_ID}" -s "${OMS_PRIMARY_KEY}" -d opinsights.azure.com
-  atl_log install_oms_linx_agent  "Finished installing OMS Linux Agent!"
+  atl_log install_oms_linx_agent "Have OMS Workspace Key? |${OMS_WORKSPACE_ID}|"
+  if [[ -n ${OMS_WORKSPACE_ID} ]]; then
+    atl_log install_oms_linx_agent  "Installing OMS Linux Agent with workspace id: ${OMS_WORKSPACE_ID} and primary key: ${OMS_PRIMARY_KEY}"
+    wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w "${OMS_WORKSPACE_ID}" -s "${OMS_PRIMARY_KEY}" -d opinsights.azure.com
+    atl_log install_oms_linx_agent  "Finished installing OMS Linux Agent!"
+  fi
 }
 
 function disable_rhel_firewall {
@@ -801,10 +804,7 @@ do
   atl_log main "Arg $i: ${!i}"
 done
 
-IS_REDHAT=$(cat /etc/os-release | egrep '^ID' | grep rhel)
-install_pacapt
-install_redhat_epel_if_needed
-install_core_dependencies
+
 prepare_env $1 $3 $5
 source setenv.sh
 

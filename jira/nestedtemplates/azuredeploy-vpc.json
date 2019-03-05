@@ -29,6 +29,20 @@
             "metadata": {
                 "description": "The SSH username to use to access the Jira nodes from the Jumpbox. Note that this is the only way to access the Jira nodes."
             }
+        },
+        "linuxOsType": {
+            "type": "string",
+            "defaultValue": "Canonical:UbuntuServer:18.04-LTS",
+            "allowedValues": [
+                "Canonical:UbuntuServer:16.04-LTS",
+                "Canonical:UbuntuServer:18.04-LTS",
+                "RedHat:RHEL:7.5",
+                "OpenLogic:CentOS:7.5",
+                "credativ:Debian:9-backports"
+            ],
+            "metadata": {
+                "description": "Select your preferred Linux OS type. Bear in mind, the Linux OS type has to support Accelerated Networking as well - https://docs.microsoft.com/en-us/azure/virtual-network/create-vm-accelerated-networking-cli"
+            }
         }
     },
     "variables": {
@@ -63,9 +77,9 @@
                 "user": "[parameters('jumpboxSshUser')]",
                 "key": "[parameters('jumpboxSshKey')]",
                 "image": {
-                    "publisher": "Canonical",
-                    "offer": "UbuntuServer",
-                    "sku": "16.04-LTS",
+                    "publisher": "[split(parameters('linuxOsType'), ':')[0]]",
+                    "offer": "[split(parameters('linuxOsType'), ':')[1]]",
+                    "sku": "[split(parameters('linuxOsType'), ':')[2]]",
                     "version": "latest"
                 },
                 "disk": {

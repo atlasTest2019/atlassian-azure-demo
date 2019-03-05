@@ -112,7 +112,6 @@
         },
         "jumpboxSshKey": {
             "type": "string",
-            "defaultValue": "",
             "metadata": {
                 "description": "The SSH public key to use to access the Jumpbox."
             },
@@ -364,6 +363,20 @@
                 "description": "The size of the virtual machine to use for each Jira node in the cluster."
             }
         },
+        "linuxOsType": {
+            "type": "string",
+            "defaultValue": "Canonical:UbuntuServer:18.04-LTS",
+            "allowedValues": [
+                "Canonical:UbuntuServer:16.04-LTS",
+                "Canonical:UbuntuServer:18.04-LTS",
+                "RedHat:RHEL:7.5",
+                "OpenLogic:CentOS:7.5",
+                "credativ:Debian:9-backports"
+            ],
+            "metadata": {
+                "description": "Select your preferred Linux OS type. Bear in mind, the Linux OS type has to support Accelerated Networking as well - https://docs.microsoft.com/en-us/azure/virtual-network/create-vm-accelerated-networking-cli"
+            }
+        },
         "clusterVmDiskSize": {
             "type": "int",
             "defaultValue": 1000,
@@ -603,6 +616,9 @@
                     },
                     "jumpboxSshUser": {
                         "value": "[parameters('jumpboxSshUser')]"
+                    },
+                    "linuxOsType": {
+                        "value": "[parameters('linuxOsType')]"
                     }
                 }
             }
@@ -749,6 +765,9 @@
                     },
                     "customDownloadUrl": {
                         "value": "[parameters('customDownloadUrl')]"
+                    },
+                    "linuxOsType": {
+                        "value": "[parameters('linuxOsType')]"
                     }
                 }
             }

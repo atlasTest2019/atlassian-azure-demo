@@ -804,7 +804,10 @@ do
   atl_log main "Arg $i: ${!i}"
 done
 
-
+IS_REDHAT=$(cat /etc/os-release | egrep '^ID' | grep rhel)
+install_pacapt
+install_redhat_epel_if_needed
+install_core_dependencies
 prepare_env $1 $3 $5
 source setenv.sh
 

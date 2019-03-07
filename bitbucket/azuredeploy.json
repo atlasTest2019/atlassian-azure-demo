@@ -684,6 +684,22 @@
                         }
                     },
                     {
+                        "name": "allowAppGwProbes",
+                        "properties": {
+                            "description": "Allow Health Probe traffic",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRanges": [
+                                "65503-65534"
+                            ],
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "priority": 101
+                        }
+                    },
+                    {
                         "name": "allowOutbound",
                         "properties": {
                             "description": "Allows outgoing HTTP traffic only from App Gateway subnet towards Internet",
@@ -786,6 +802,22 @@
                             "access": "Allow",
                             "direction": "Inbound",
                             "priority": 201
+                        }
+                    },
+                    {
+                        "name": "allowLoadBalancingHealthProbe",
+                        "properties": {
+                            "description": "Allow health probe traffic",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRanges": [
+                                "7990"
+                            ],
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "[variables('net').subnets.bbs.cidr]",
+                            "access": "Allow",
+                            "priority": 202,
+                            "direction": "Inbound"
                         }
                     },
                     "[variables('net').nsg.rules.denyInbound]"
@@ -921,7 +953,8 @@
                 "publicIPAllocationMethod": "Static",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('net').lb.dns]"
-                }
+                },
+                "idleTimeoutInMinutes": 30
             }
         },
         {
@@ -937,7 +970,8 @@
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('net').appGw.dns]"
-                }
+                },
+                "idleTimeoutInMinutes": 30
             }
         },
         {
@@ -983,7 +1017,8 @@
                             },
                             "frontendPort": 7999,
                             "backendPort": 7999,
-                            "protocol": "Tcp"
+                            "protocol": "Tcp",
+                            "idleTimeoutInMinutes": 30
                         }
                     },
                     {
@@ -997,7 +1032,8 @@
                             },
                             "frontendPort": 22,
                             "backendPort": 22,
-                            "protocol": "Tcp"
+                            "protocol": "Tcp",
+                            "idleTimeoutInMinutes": 30
                         }
                     }
                 ]
@@ -1050,7 +1086,8 @@
                             }
                         }
                     }
-                ]
+                ],
+                "enableAcceleratedNetworking": true 
             }
         },
         {
@@ -1148,7 +1185,8 @@
                             "port": "[parameters('bbsHttpPort')]",
                             "protocol": "Http",
                             "cookieBasedAffinity": "Enabled",
-                            "affinityCookieName": "AZURESESSIONID"
+                            "affinityCookieName": "AZURESESSIONID",
+                            "requestTimeout": 7200
                         }
                     }
                 ],
@@ -1415,7 +1453,8 @@
                                                 ]
                                             }
                                         }
-                                    ]
+                                    ],
+                                    "enableAcceleratedNetworking": true
                                 }
                             }
                         ]

@@ -16,7 +16,7 @@ pipelines:
           - pip
         script:
           - pip install --upgrade pip
-          - pip install setuptools 
+          - pip install setuptools -U
           - pip install azure-cli
           - echo "{\"jumpboxSshKey\":{\"value\":\"$JUMPBOX_SSH_KEY\"}}" > jumpboxParam.json
           - cat jumpboxParam.json

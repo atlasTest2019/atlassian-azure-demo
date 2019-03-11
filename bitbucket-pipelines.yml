@@ -6,7 +6,8 @@
 image: python:3.5.1
 
 pipelines:
-  default:
+  custom:
+    nightlySmokeTest:
     - step:
         caches:
           - pip
@@ -34,6 +35,16 @@ pipelines:
               AZURE_DEPLOYMENT_TEMPLATE_URI: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json'
               AZURE_DEPLOYMENT_PARAMETERS: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json'
               DEBUG: 'false'
+        after-script:
+          - echo "Cleaning up!"
+          - pipe: microsoft/azure-cli-run:1.0.1
+            variables:
+              AZURE_APP_ID: $AZURE_APP_ID
+              AZURE_PASSWORD: $AZURE_PASSWORD
+              AZURE_TENANT_ID: $AZURE_TENANT_ID
+              CLI_COMMAND: 'az group delete --resource-group $AZURE_PIPELINE_RG --no-wait'
+              DEBUG: 'false'
+              
 
 
 

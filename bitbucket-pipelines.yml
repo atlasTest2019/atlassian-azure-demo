@@ -20,6 +20,7 @@ pipelines:
           - pip install azure-cli
           - echo "{\"jumpboxSshKey\":{\"value\":\"$JUMPBOX_SSH_KEY\"}}" > jumpboxParam.json
           - cat jumpboxParam.json
+          - export "AZURE_PIPELINE_RG=PIPELINE_$$"
           - echo $AZURE_PIPELINE_RG
           - pipe: microsoft/azure-cli-run:1.0.1
             variables:
@@ -40,13 +41,7 @@ pipelines:
               AZURE_DEPLOYMENT_TEMPLATE_URI: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json'
               AZURE_DEPLOYMENT_PARAMETERS: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json'
               DEBUG: 'false'
-          - pipe: microsoft/azure-cli-run:1.0.1
-            variables:
-              AZURE_APP_ID: $AZURE_APP_ID
-              AZURE_PASSWORD: $AZURE_PASSWORD
-              AZURE_TENANT_ID: $AZURE_TENANT_ID
-              CLI_COMMAND: 'az group deployment show --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG'
-              DEBUG: 'false'
+          - az group deployment show --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG > azureOutput.json
           - cat azureOutput.json  
         after-script:
           - echo "Cleaning up!"

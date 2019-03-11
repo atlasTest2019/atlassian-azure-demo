@@ -20,14 +20,19 @@ pipelines:
               AZURE_APP_ID: $AZURE_APP_ID
               AZURE_PASSWORD: $AZURE_PASSWORD
               AZURE_TENANT_ID: $AZURE_TENANT_ID
-              CLI_COMMAND: 'az group create --resource-group $AZURE_PIPELINE_RG --location canadacentral'
+              CLI_COMMAND: 'az group create --resource-group $AZURE_PIPELINE_RG --location $AZURE_LOCATION'
               DEBUG: 'false'
-          - pipe: microsoft/azure-cli-run:1.0.1
+          - pipe: microsoft/azure-arm-deploy:1.0.1
             variables:
               AZURE_APP_ID: $AZURE_APP_ID
               AZURE_PASSWORD: $AZURE_PASSWORD
               AZURE_TENANT_ID: $AZURE_TENANT_ID
-              CLI_COMMAND: 'az group deployment create --resource-group $AZURE_PIPELINE_RG --template-uri https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json --parameters https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json'
+              AZURE_RESOURCE_GROUP: $AZURE_PIPELINE_RG
+              AZURE_LOCATION: $AZURE_LOCATION
+              AZURE_DEPLOYMENT_NAME: $AZURE_PIPELINE_RG
+              AZURE_DEPLOYMENT_MODE: 'Complete'
+              AZURE_DEPLOYMENT_TEMPLATE_URI: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json'
+              AZURE_DEPLOYMENT_PARAMETERS: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json'
               DEBUG: 'false'
 
 

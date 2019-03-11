@@ -21,7 +21,7 @@ pipelines:
               AZURE_DEPLOYMENT_NAME: 'SMBambooTest'
               AZURE_DEPLOYMENT_MODE: 'Complete'
               AZURE_DEPLOYMENT_TEMPLATE_URI: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json'
-              AZURE_DEPLOYMENT_PARAMETERS: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters jumpboxSshKey=$JUMPBOX_SSH_KEY'
+              AZURE_DEPLOYMENT_PARAMETERS: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters "jumpboxSshKey=$JUMPBOX_SSH_KEY"'
               AZURE_DEPLOYMENT_ROLLBACK_ON_ERROR: 'true'
               DEBUG: 'true'
 

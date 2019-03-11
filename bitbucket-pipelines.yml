@@ -43,7 +43,7 @@ pipelines:
               AZURE_APP_ID: $AZURE_APP_ID
               AZURE_PASSWORD: $AZURE_PASSWORD
               AZURE_TENANT_ID: $AZURE_TENANT_ID
-              CLI_COMMAND: 'az group deployment show --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG > azureOutput.json'
+              CLI_COMMAND: 'az group deployment show --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG'
               DEBUG: 'false'
           - cat azureOutput.json  
         after-script:

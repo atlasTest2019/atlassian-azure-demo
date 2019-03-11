@@ -314,12 +314,25 @@ function bbs_download_installer {
     local bucket="${BBS_INSTALLER_BUCKET}"
     local path="${BBS_INSTALLER_PATH}"
     local version="${BBS_INSTALLER_VERSION}"
-    local file="${BBS_INSTALLER_FILE}"
 
-    local url="${base}/${bucket}/${path}/${version}/${file}"
+    if [[ "${version}" = "latest" ]];
+    then
+        local file="atlassian-bitbucket-linux-x64.bin"
+    else
+        local file="atlassian-bitbucket-${version}-linux-x64.bin"
+    fi
+
+    if [[ -n "${BBS_INSTALLER_DOWNLOAD_URL}" ]];
+    then
+        local url="${BBS_INSTALLER_DOWNLOAD_URL}"
+        log "Downloading Bitbucket Server installer from [url=${url}]"
+    else
+        local url="${base}/${bucket}/${path}/${version}/${file}"
+        log "Downloading Bitbucket Server installer [base=${base}, bucket=${bucket}, path=${path}, version=${version}, file=${file}] from [url=${url}]"
+    fi
+
+
     local target="${NFS_INSTALLER_DIR}/installer"
-
-    log "Downloading Bitbucket Server installer [base=${base}, bucket=${bucket}, path=${path}, version=${version}, file=${file}] from [url=${url}]"
 
     if ! curl -L -f --silent "${url}" \
        -o "${target}" 2>&1

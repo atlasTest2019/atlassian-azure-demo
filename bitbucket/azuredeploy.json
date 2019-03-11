@@ -30,6 +30,20 @@
             },
             "defaultValue": ""
         },
+        "bitbucketVersion": {
+            "type": "string",
+            "defaultValue": "latest",
+            "metadata": {
+                "description": "The Bitbucket software product version to install. You can also specify 'latest' to download the latest version available. If using with customDownloadUrl you have to specify the correct version."
+            }
+        },
+        "customDownloadUrl": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Use this URL to override standard Atlassian download url eg for EAP, RC versions. NB will be used in conjunction with the bitbucketVersion parameter."
+            }
+        },
         "location": {
             "type": "string",
             "defaultValue": "[resourceGroup().location]",
@@ -670,6 +684,22 @@
                         }
                     },
                     {
+                        "name": "allowAppGwProbes",
+                        "properties": {
+                            "description": "Allow Health Probe traffic",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRanges": [
+                                "65503-65534"
+                            ],
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "priority": 101
+                        }
+                    },
+                    {
                         "name": "allowOutbound",
                         "properties": {
                             "description": "Allows outgoing HTTP traffic only from App Gateway subnet towards Internet",
@@ -772,6 +802,22 @@
                             "access": "Allow",
                             "direction": "Inbound",
                             "priority": 201
+                        }
+                    },
+                    {
+                        "name": "allowLoadBalancingHealthProbe",
+                        "properties": {
+                            "description": "Allow health probe traffic",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRanges": [
+                                "7990"
+                            ],
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "[variables('net').subnets.bbs.cidr]",
+                            "access": "Allow",
+                            "priority": 202,
+                            "direction": "Inbound"
                         }
                     },
                     "[variables('net').nsg.rules.denyInbound]"
@@ -907,7 +953,8 @@
                 "publicIPAllocationMethod": "Static",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('net').lb.dns]"
-                }
+                },
+                "idleTimeoutInMinutes": 30
             }
         },
         {
@@ -923,7 +970,8 @@
                 "publicIPAllocationMethod": "Dynamic",
                 "dnsSettings": {
                     "domainNameLabel": "[variables('net').appGw.dns]"
-                }
+                },
+                "idleTimeoutInMinutes": 30
             }
         },
         {
@@ -969,7 +1017,8 @@
                             },
                             "frontendPort": 7999,
                             "backendPort": 7999,
-                            "protocol": "Tcp"
+                            "protocol": "Tcp",
+                            "idleTimeoutInMinutes": 30
                         }
                     },
                     {
@@ -983,7 +1032,8 @@
                             },
                             "frontendPort": 22,
                             "backendPort": 22,
-                            "protocol": "Tcp"
+                            "protocol": "Tcp",
+                            "idleTimeoutInMinutes": 30
                         }
                     }
                 ]
@@ -1036,7 +1086,8 @@
                             }
                         }
                     }
-                ]
+                ],
+                "enableAcceleratedNetworking": true 
             }
         },
         {
@@ -1134,7 +1185,8 @@
                             "port": "[parameters('bbsHttpPort')]",
                             "protocol": "Http",
                             "cookieBasedAffinity": "Enabled",
-                            "affinityCookieName": "AZURESESSIONID"
+                            "affinityCookieName": "AZURESESSIONID",
+                            "requestTimeout": 7200
                         }
                     }
                 ],
@@ -1307,7 +1359,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "bash install.sh nfs"
+                            "commandToExecute": "[concat('BBS_VERSION=\"', parameters('bitbucketVersion'), '\" ', 'BBS_INSTALLER_DOWNLOAD_URL=\"', parameters('customDownloadUrl'), '\" ', ' bash install.sh nfs')]"
                         }
                     }
                 }
@@ -1401,7 +1453,8 @@
                                                 ]
                                             }
                                         }
-                                    ]
+                                    ],
+                                    "enableAcceleratedNetworking": true
                                 }
                             }
                         ]

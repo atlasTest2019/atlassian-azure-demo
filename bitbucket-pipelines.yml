@@ -5,6 +5,9 @@
 # You can specify a custom docker image from Docker Hub as your build environment.
 image: python:3.5.1
 
+options:
+  max-time: 60
+ 
 pipelines:
   custom:
     nightlySmokeTest:
@@ -35,6 +38,14 @@ pipelines:
               AZURE_DEPLOYMENT_TEMPLATE_URI: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json'
               AZURE_DEPLOYMENT_PARAMETERS: 'https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json'
               DEBUG: 'false'
+          - pipe: microsoft/azure-cli-run:1.0.1
+            variables:
+              AZURE_APP_ID: $AZURE_APP_ID
+              AZURE_PASSWORD: $AZURE_PASSWORD
+              AZURE_TENANT_ID: $AZURE_TENANT_ID
+              CLI_COMMAND: 'az group deployment show --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG > azureOutput.json'
+              DEBUG: 'false'
+          - cat azureOutput.json  
         after-script:
           - echo "Cleaning up!"
           - pipe: microsoft/azure-cli-run:1.0.1

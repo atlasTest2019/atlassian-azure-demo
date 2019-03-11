@@ -11,7 +11,7 @@ pipelines:
         caches:
           - pip
         script:
-          - echo '{"jumpboxSshKey":{"value":"$JUMPBOX_SSH_KEY"}}' > jumpboxParam.json
+          - echo "{\"jumpboxSshKey\":{\"value\":\"$JUMPBOX_SSH_KEY\"}}" > jumpboxParam.json
           - cat jumpboxParam.json
           - pipe: microsoft/azure-arm-deploy:1.0.1
             variables:

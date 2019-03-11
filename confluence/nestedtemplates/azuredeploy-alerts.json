@@ -161,7 +161,7 @@
                 "description": "SAN Size Over 4TB",
                 "enabled": true,
                 "severity": 3,
-                "windowSize": "PT5M",
+                "windowSize": "PT1H",
                 "evaluationFrequency": "PT1M",
                 "templateType": "8",
                 "templateSpecificParameters": {},

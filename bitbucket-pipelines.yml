@@ -19,7 +19,7 @@ pipelines:
           - pip install setuptools -U
           - pip install azure-cli
           - mkdir -p $BITBUCKET_CLONE_DIR/outputs
-          - echo "BB_PIPELINE_$$" > $BITBUCKET_CLONE_DIR/outputs/resourcegroup
+          - echo "BB_PIPELINE_$BITBUCKET_BUILD_NUMBER" > $BITBUCKET_CLONE_DIR/outputs/resourcegroup
           - export AZURE_PIPELINE_RG=$(cat $BITBUCKET_CLONE_DIR/outputs/resourcegroup)
           - env | sort
           - az login --service-principal --username $AZURE_APP_ID --password $AZURE_PASSWORD --tenant $AZURE_TENANT_ID

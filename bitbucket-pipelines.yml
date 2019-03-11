@@ -15,9 +15,9 @@ pipelines:
         caches:
           - pip
         script:
+          - pip install azure-cli
           - echo "{\"jumpboxSshKey\":{\"value\":\"$JUMPBOX_SSH_KEY\"}}" > jumpboxParam.json
           - cat jumpboxParam.json
-          - export "AZURE_PIPELINE_RG=PIPELINE_$$"
           - echo $AZURE_PIPELINE_RG
           - pipe: microsoft/azure-cli-run:1.0.1
             variables:

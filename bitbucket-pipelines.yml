@@ -30,11 +30,11 @@ pipelines:
           - az group deployment create --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG --template-uri https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json --parameters https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json | tee $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json
           - cat $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json
           - APP_ENDPOINT=$(jp.py -f $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json 'properties.outputs.appEndpoint.value' | sed 's/"//g')
-          - curl -i $APP_ENDPOINT/status
+          - curl -sSf $APP_ENDPOINT/status
         artifacts:
           - outputs/**
         after-script:
-          - echo "az group delete --resource-group $(cat outputs/resourcegroup) --yes --no-wait"
+          - az group delete --resource-group $(cat outputs/resourcegroup) --yes --no-wait
 
               
 

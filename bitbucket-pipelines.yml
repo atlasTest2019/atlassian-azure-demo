@@ -18,7 +18,8 @@ pipelines:
           - pip install --upgrade pip
           - pip install setuptools -U
           - pip install azure-cli
-          - pip install jq
+          - apt-get update
+          - apt-get install jq
           - curl --version
           - jq --version
           - mkdir -p $BITBUCKET_CLONE_DIR/outputs

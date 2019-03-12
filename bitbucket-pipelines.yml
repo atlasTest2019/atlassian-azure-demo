@@ -18,7 +18,7 @@ pipelines:
           - pip install --upgrade pip
           - pip install setuptools -U
           - pip install azure-cli
-          - sudo apt-get install curl jq
+          - apt-get install curl jq
           - mkdir -p $BITBUCKET_CLONE_DIR/outputs
           - echo "BB_PIPELINE_$BITBUCKET_BUILD_NUMBER" > $BITBUCKET_CLONE_DIR/outputs/resourcegroup
           - export AZURE_PIPELINE_RG=$(cat $BITBUCKET_CLONE_DIR/outputs/resourcegroup)

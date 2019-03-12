@@ -46,7 +46,8 @@ pipelines:
           
           # Get endpoint from Outputs section and ping heartbeat
           - APP_ENDPOINT=$(jp.py -f $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json 'properties.outputs.appEndpoint.value' | sed 's/"//g')
-          - curl -sSf $APP_ENDPOINT/status
+          - echo "Testing app haertbeat at $APP_ENDPOINT/status"
+          - curl -isSf --retry 5 --retry-connrefused $APP_ENDPOINT/status
         artifacts:
           - outputs/**
         after-script:

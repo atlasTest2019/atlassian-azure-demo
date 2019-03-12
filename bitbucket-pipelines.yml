@@ -18,10 +18,7 @@ pipelines:
           - pip install --upgrade pip
           - pip install setuptools -U
           - pip install azure-cli
-          - apt-get update
-          - apt-get install jq
-          - curl --version
-          - jq --version
+          - pip install jmespath
           - mkdir -p $BITBUCKET_CLONE_DIR/outputs
           - echo "BB_PIPELINE_$BITBUCKET_BUILD_NUMBER" > $BITBUCKET_CLONE_DIR/outputs/resourcegroup
           - export AZURE_PIPELINE_RG=$(cat $BITBUCKET_CLONE_DIR/outputs/resourcegroup)
@@ -31,12 +28,13 @@ pipelines:
           - cat jumpboxParam.json
           - az group create --resource-group $AZURE_PIPELINE_RG --location $AZURE_LOCATION
           - az group deployment create --resource-group $AZURE_PIPELINE_RG --name $AZURE_PIPELINE_RG --template-uri https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.json --parameters https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/jira/azuredeploy.parameters.json --parameters @jumpboxParam.json | tee $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json
-          - cat $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json 
+          - cat $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json
+          - APP_ENDPOINT=$(jp.py -f $BITBUCKET_CLONE_DIR/outputs/azureDeployOutput.json 'properties.outputs.appEndpoint.value' | sed 's/"//g')
+          - curl -i $APP_ENDPOINT/status
         artifacts:
           - outputs/**
         after-script:
-          - echo "Cleaning up!"
-          - az group delete --resource-group $(cat outputs/resourcegroup) --yes --no-wait
+          - echo "az group delete --resource-group $(cat outputs/resourcegroup) --yes --no-wait"
 
               
 

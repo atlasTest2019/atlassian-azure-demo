@@ -3,7 +3,7 @@
 <confluence-configuration>
   <setupStep>complete</setupStep>
   <setupType>cluster</setupType>
-  <buildNumber>7201</buildNumber>
+  <buildNumber>7901</buildNumber>
   <properties>
     <property name="atlassian.license.message">{{CONFLUENCE_LICENSE}}</property>
     <property name="confluence.cluster">true</property>

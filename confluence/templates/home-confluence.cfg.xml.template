@@ -3,7 +3,7 @@
 <confluence-configuration>
   <setupStep>complete</setupStep>
   <setupType>cluster</setupType>
-  <buildNumber>7201</buildNumber>
+  <buildNumber>7901</buildNumber>
   <properties>
     <property name="admin.ui.allow.daily.backup.custom.location">false</property>
     <property name="admin.ui.allow.manual.backup.download">false</property>

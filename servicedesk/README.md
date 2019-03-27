@@ -23,9 +23,9 @@ NB. The current Azure deployment utilises certain Azure functionality like App I
 
 You can of course disable App Insights, Analytics etc via the template parameters to allow installation to your desired region.  
 
-NB That the templates will delete the latest version available from Atlassian Download site. These new releases might introduce breaking changes but you can always specify particular version by updating the jiraVersion parameter.  
+NB That the templates will download the latest version available from Atlassian Download site. These new releases might introduce breaking changes but you can always specify particular version by updating the jiraVersion parameter.  
 
-Further information on parameters and other installation options for the Atlassian Azure solution can be found at our [Support Page](https://hello.atlassian.net/wiki/spaces/DC/pages/369608838/Azure+Support+Page)  
+Further information on parameters and other installation options for the Atlassian Azure solution can be found at our [Jira Azure Support Page](https://confluence.atlassian.com/adminjiraserver075/getting-started-with-jira-data-center-on-azure-937183335.html). NB Service Desk is built upon Jira's software stack/architecture.  
 
 ## View Azure Deployment Results
 

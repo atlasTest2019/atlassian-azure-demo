@@ -23,9 +23,9 @@ Note: The current Azure deployment utilizes certain Azure functionality like App
 
 You can of course disable App Insights, Analytics etc via the template parameters to allow installation to your desired region.  
 
-NB That the templates will use the latest version available from Atlassian Download site. These new releases might introduce breaking changes but you can always specify particular version by updating the confluenceVersion parameter.
+NB That the templates will download the latest version available from Atlassian Download site. These new releases might introduce breaking changes but you can always specify particular version by updating the confluenceVersion parameter.
 
-Further information on parameters and other installation options for the Atlassian Azure solution can be found at our [Support Page](https://confluence.atlassian.com/display/DOC/Set+up+a+Synchrony+cluster+for+Confluence+Data+Center)  
+Further information on parameters and other installation options for the Atlassian Azure solution can be found at our [Confluence Azure Support Page](https://confluence.atlassian.com/doc/getting-started-with-confluence-data-center-on-azure-937176452.html)  
 
 ## View Azure Deployment Results
 

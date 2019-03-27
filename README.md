@@ -20,12 +20,13 @@ These templates will be utilise Azure Cloud features to create a resilient and s
 *  Choice of Azure SQL DB or Postgres databases.  
 *  Choice of supplying existing Azure SQL DB or Postgres database.  
 *  Integrated Azure Accelerated Networking for enhanced cluster performance.  
-*  Recommended HW/cluster sizing or fully configurable HW options.  
+*  Recommended HW/cluster sizing or fully configurable HW options. 
+*  Configurable Linux OS options for Jumpbox/VMs (Ubuntu LTS 16.04/18.04, RHEL 7.5, Centos 7.5, Debian Stretch 9-backports ) 
 
  
 ![Azure Architecture](images/AzureArchitecture.png "Azure Architecture")
 
-Further information on the Atlassian Azure solution, features, install options, FAQs etc can be found at our [Support Page](https://hello.atlassian.net/wiki/spaces/DC/pages/369608838/Azure+Support+Page)  
+Further information on the Atlassian Azure solution, features, install options, FAQs etc can be found at our [Atlassian Azure Page](https://www.atlassian.com/enterprise/data-center/azure)  
 
 
 ## Installation

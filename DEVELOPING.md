@@ -23,36 +23,45 @@ Before making changes to the configuration, be sure to first read the *Keeping p
 
 
 1. Clone this Bitbucket repository.
+
     ```
     cd ~/git
     git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
     ```
+
 2. Enter the repository's root directory.
-```
-cd ~/git/atlassian-azure-deployment
-```
+
+    ```
+    cd ~/git/atlassian-azure-deployment
+    ```
+
 3. Enter your username into the `.prefix` file. This will prefix all resource groups with your username.
-```
-echo "$(whoami)-" > .prefix
-```
+
+    ```
+    echo "$(whoami)-" > .prefix
+    ```
+
 4. The `.product` file in that same directory sets what product to deploy. By default, it is set to `jira`. To deploy a different product (for example, `confluence`), replace this value:
-```
-echo confluence > .product
-```
+
+    ```
+    echo confluence > .product
+    ```
 
 The `.product` file sets which product-specific ARM templates to use during deployment.
 
 ## How to run a deployment
 1. [Sign in](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest) your credentials:
-```
-az login -u <username> -p <password>
-```
+
+    ```
+    az login -u <username> -p <password>
+    ```
+
 2. Run `npm i` to install dependencies.
 3. Check all of the settings of your deployment. The command in the next step will start the deployment, and it uses settings from the following files:
- * `<product>/azuredeploy.parameters.local.json`: this is where all of your product's deployment settings should be. At a minimum, your SSH key should be set properly here (see [Jumpbox SSH Key Parameter](README.md) for instructions).
- * `.prefix`: sets what prefix to use for resource groups.
- * `.product`: sets what product to deploy (`jira`, `confluence`, or `bitbucket`).
-3. Run `npm start` to start the deployment.
+    * `<product>/azuredeploy.parameters.local.json`: this is where all of your product's deployment settings should be. At a minimum, your SSH key should be set properly here (see [Jumpbox SSH Key Parameter](README.md) for instructions).
+    * `.prefix`: sets what prefix to use for resource groups.
+    * `.product`: sets what product to deploy (`jira`, `confluence`, or `bitbucket`).
+4. Run `npm start` to start the deployment.
 
 To remove a deployment:
 ```

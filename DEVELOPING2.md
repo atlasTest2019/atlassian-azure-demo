@@ -11,51 +11,65 @@ This page contains alternative methods to the ones found on [Deploying via Azure
 A _paramaters template_ is a JSON file that contains parameters for a customized deployment. You can use this _paramaters template_ as a basis for other templates; for example, you can have separate parameters templates for Confluence, Jira Service Desk, or similar instances with different database schemas.
 
 1. Clone this Bitbucket repository.
-```
-cd ~/git
-git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
-```
-2. Create a [blobstore](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-cli) in a new storage account. Keep this storage account in a resource group separate from any deployment.   
-```
-az group create --name blobstoreresourcegroup --location eastus
-az storage account create --name storageaccount --resource-group blobstoreresourcegroup --location eastus --sku Standard_LRS
-...
- "primaryEndpoints": {
-    "blob": "https://storageaccount.blob.core.windows.net/",
-    "dfs": null,
-    "file": "https://storageaccount.file.core.windows.net/",
-    "queue": "https://storageaccount.queue.core.windows.net/",
-    "table": "https://storageaccount.table.core.windows.net/",
-    "web": null
-  },
-...
-```
-3. Create a [SAS token](https://docs.microsoft.com/en-us/cli/azure/storage/account?view=azure-cli-latest#az-storage-account-generate-sas).
-```
-az storage account generate-sas --account-name storageaccount --services bfqt --resource-types sco --permissions cdlruwap --expiry $(date --date "next year" '+%Y-%m-%dT%H:%MZ')
-"se=2020-02-13T15%3A37Z&sp=rwdlacup&sv=2018-03-28&ss=bfqt&srt=sco&sig=XanVOenVIroHQFbkyUjk6E9nuHFEm1Rpyu3N2AiOOX0%3D"
-```
-4. Create a container for each Atlassian application (for example, `jiratemplateupload` for Jira, or `confluenceupload` for Confluence):  
-```
-az storage container create --name jiratemplateupload --account-name storageaccount --sas-token 'se=2020-02-13T15%3A37Z&sp=rwdlacup&sv=2018-03-28&ss=bfqt&srt=sco&sig=XanVOenVIroHQFbkyUjk6E9nuHFEm1Rpyu3N2AiOOX0%3D'
-```
-5. Use AzCopy to upload edited templates/scripts to the blobstore (do this before each deployment). Note the use of the blob's primary endpoint and the question mark prefix on the SAS token.  
-```
-~/apps/azcopy/azcopy --quiet --source ~/git/atlassian-azure-deployment/jira/ --destination https://storageaccount.blob.core.windows.net/jiratemplateupload/ --recursive --dest-sas '?se=2020-02-13T15%3A37Z&sp=rwdlacup&sv=2018-03-28&ss=bfqt&srt=sco&sig=XanVOenVIroHQFbkyUjk6E9nuHFEm1Rpyu3N2AiOOX0%3D'
-```
-Since you will be using the same AzCopy command often, you might want to copy/paste this command into a new script file (for example, `~/atlassian/bin/azupload`).  
-6. Create a local directory for your templates and copy the default `azuredeploy.parameters.json` to there:  
-```
-mkdir -p ~/atlassian/templates
-cp azuredeploy.parameters.json ~/atlassian/templates/myparameterstemplate.json
-```
-The `~/atlassian/templates/myparameterstemplate.json` file is your new _parameters file_, which you can now edit to suit your needs.
-7. Before you can use your parameters template in a deployment, open it first and update the following parameters:
- * `_artifactsLocation`: the blob primary endpoint. By default, this parameter will point to the `master` branch in this Bitbucket repo.
- * `_artifactsLocationSasToken`: the SAS token you generated in step 3.
- * `jumpboxSshKey`: your SSH public key (for example, `~/.ssh/id_rsa.pub`).
 
- For example:
+    ```
+    cd ~/git
+    git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
+    ```
+
+2. Create a [blobstore](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-cli) in a new storage account. Keep this storage account in a resource group separate from any deployment.   
+
+    ```
+    az group create --name blobstoreresourcegroup --location eastus
+    az storage account create --name storageaccount --resource-group blobstoreresourcegroup --location eastus --sku Standard_LRS
+      ...
+      "primaryEndpoints": {
+        "blob": "https://storageaccount.blob.core.windows.net/",
+        "dfs": null,
+        "file": "https://storageaccount.file.core.windows.net/",
+        "queue": "https://storageaccount.queue.core.windows.net/",
+        "table": "https://storageaccount.table.core.windows.net/",
+        "web": null
+        },
+      ...
+      ```
+
+3. Create a [SAS token](https://docs.microsoft.com/en-us/cli/azure/storage/account?view=azure-cli-latest#az-storage-account-generate-sas).
+
+    ```
+    az storage account generate-sas --account-name storageaccount --services bfqt --resource-types sco --permissions cdlruwap --expiry $(date --date "next year" '+%Y-%m-%dT%H:%MZ')
+    "se=2020-02-13T15%3A37Z&sp=rwdlacup&sv=2018-03-28&ss=bfqt&srt=sco&sig=XanVOenVIroHQFbkyUjk6E9nuHFEm1Rpyu3N2AiOOX0%3D"
+    ```
+
+4. Create a container for each Atlassian application (for example, `jiratemplateupload` for Jira, or `confluenceupload` for Confluence):  
+
+    ```
+    az storage container create --name jiratemplateupload --account-name storageaccount --sas-token 'se=2020-02-13T15%3A37Z&sp=rwdlacup&sv=2018-03-28&ss=bfqt&srt=sco&sig=XanVOenVIroHQFbkyUjk6E9nuHFEm1Rpyu3N2AiOOX0%3D'
+    ```
+
+5. Use AzCopy to upload edited templates/scripts to the blobstore (do this before each deployment). Note the use of the blob's primary endpoint and the question mark prefix on the SAS token.  
+
+    ```
+    ~/apps/azcopy/azcopy --quiet --source ~/git/atlassian-azure-deployment/jira/ --destination https://storageaccount.blob.core.windows.net/jiratemplateupload/ --recursive --dest-sas '?se=2020-02-13T15%3A37Z&sp=rwdlacup&sv=2018-03-28&ss=bfqt&srt=sco&sig=XanVOenVIroHQFbkyUjk6E9nuHFEm1Rpyu3N2AiOOX0%3D'
+    ```
+
+    Since you will be using the same AzCopy command often, you might want to copy/paste this command into a new script file (for example, `~/atlassian/bin/azupload`).  
+
+6. Create a local directory for your templates and copy the default `azuredeploy.parameters.json` to there:  
+
+    ```
+    mkdir -p ~/atlassian/templates
+    cp azuredeploy.parameters.json ~/atlassian/templates/myparameterstemplate.json
+    ```
+    The `~/atlassian/templates/myparameterstemplate.json` file is your new _parameters file_, which you can now edit to suit your needs.
+
+
+Before you can use your parameters template in a deployment, open it first and update the following parameters:
+* `_artifactsLocation`: the blob primary endpoint. By default, this parameter will point to the `master` branch in this Bitbucket repo.
+* `_artifactsLocationSasToken`: the SAS token you generated in step 3.
+* `jumpboxSshKey`: your SSH public key (for example, `~/.ssh/id_rsa.pub`).
+
+For example:
 ```
 {
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",

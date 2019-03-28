@@ -693,8 +693,8 @@
 								"toolTip": "The SSH password of the SSH user needed to access the Confluence nodes from the Jumpbox.",
 								"constraints": {
 									"required": true,
-									"regex": "(?=.{5,})",
-									"validationMessage": "This password must be a minimum of 5 characters long."
+									"regex": "^(?=.*[A-Z])(?=.*[!@#$%])(?=.*[0-9])(?=.*[a-z]).{6,72}$",
+									"validationMessage": "This password must be between 6 and 72 characters long, and must contain at least one uppercase letter, one lowercase letter, one number (0-9), and one non-alphanumeric character (!, $, #, %, etc.)."
 								}
 							}
 						]

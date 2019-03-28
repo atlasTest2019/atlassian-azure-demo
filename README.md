@@ -9,30 +9,46 @@ This repository contains Azure ARM templates to install the following [Atlassian
 4. [Jira Service Desk Data Center](https://www.atlassian.com/software/jira/service-desk/enterprise/data-center)  
 
 ## Key Features
-These templates will be utilise Azure Cloud features to create a resilient and scaleable solution:  
+The templates in this repository use Azure Cloud features to create a resilient and scaleable solution:  
 
-*  Only Azure "managed" features/functionality used to provide scaleablity, monitoring and backup/recovery features "out of the box."  
-*  Secure solution - security and accessibility principles/rules applied to ensure all customer data is protected.  
+*  Only Azure "managed" features/functionality used to provide scaleablity, monitoring, and backup/recovery features "out of the box."  
+*  Security and accessibility principles/rules applied to ensure all customer data is protected.  
 *  Optional SSL and CNAME/domain name support.  
-*  Advanced monitoring with integrated Azure Application Insights, Azure Monitor.  
-*  Advanced analytics with integrated Azure Application Insights, Azure SQL Analytics, Azure Gateway Analytics.  
+*  Advanced monitoring and analytics the following integrated services:
+**  Azure Application Insights
+**  Azure Monitor
+**  Azure SQL Analytics
+**  Azure Gateway Analytics
 *  Log collection/aggregation.  
-*  Choice of Azure SQL DB or Postgres databases.  
-*  Choice of supplying existing Azure SQL DB or Postgres database.  
+*  Database flexibility:
+**  You can deploy an Azure SQL DB or Postgres database.  
+**  You can supply an existing Azure SQL DB or Postgres database.  
 *  Integrated Azure Accelerated Networking for enhanced cluster performance.  
-*  Recommended HW/cluster sizing or fully configurable HW options.  
+*  Recommended infrastructure/cluster sizing or fully configurable infrastructure options.  
 
- 
+
 ![Azure Architecture](images/AzureArchitecture.png "Azure Architecture")
 
-Further information on the Atlassian Azure solution, features, install options, FAQs etc can be found at our [Support Page](https://hello.atlassian.net/wiki/spaces/DC/pages/369608838/Azure+Support+Page)  
-
-
 ## Installation
-Each Atlassian application folder contains specific instructions on how to deploy the individual application so always check there first. As well as this repository, the Atlassian apps can also be found on the Azure Marketplace.
+
+Each Atlassian application folder contains specific instructions on how to deploy the individual application, so always check there first. You can also find the same templates on the Azure Marketplace (you can also deploy them straight from there):
+
+*  [Jira Software Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.jira-data-center)
+*  [Jira Service Desk Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.jira-service-desk)
+*  [Confluence Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.confluence-data-center)
+*  [Bitbucket Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.bbsdc)
+
+When you deploy an Atlassian application through the Azure Marketplace, many parameters will be pre-configured for your convenience.
+
+If you prefer a more bespoke deployment, you're welcome to edit the templates directly. When you do, you'll need to deploy via the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest). Choose one of the following methods, depending on which tools you're comfortable with:
+
+*  [Deploying via Azure CLI with Node and Gulp](DEVELOPING.md)
+*  [Deploying via Azure CLI with AzCopy](DEVELOPING2.md)
+
+Both methods contain recommendations for
 
 ### Jumpbox SSH Key Parameter
-However, for all apps, you'll always need to specify a `jumpboxSshKey` parameter in order to be able to connect (via SSH) to the jumpbox/bastion node (and then onto the Cluster nodes). This key is your device's SSH public key (normally found at `~/.ssh/id_rsa.pub`). Cut/paste this value into the `jumpboxSshKey` parameter like so:
+Regardless of what you're installing, you'll *always* need to specify your _jumpbox key_. Do this through the `jumpboxSshKey` parameter (for all products except Bitbucket). This will allow you to connect via SSH to the jumpbox/bastion node (and then onto the cluster nodes). This key is your device's SSH public key (normally found at `~/.ssh/id_rsa.pub`). Cut/paste this value into the `jumpboxSshKey` parameter like so:
 ```
     {
         "parameters": {
@@ -42,9 +58,20 @@ However, for all apps, you'll always need to specify a `jumpboxSshKey` parameter
         }
     }
 ```
-
-## Development
-Please see the development options [DEVELOPING.md](DEVELOPING.md) or [DEVELOPING2.md](DEVELOPING2.md) for more information on how you can use the update/develop the templates.
+#### Jumpbox key configuration for Bitbucket
+Bitbucket is slightly different; set your jumpbox key through `sshKey` instead of `jumpoboxSshKey`. You'll also need to set `adminPassword` -- this will allow you to SSH _from_ the jumpbox into the cluster nodes.
+```
+{
+    "parameters": {
+        "sshKey":
+            "value": "ssh-rsa AAAAo2D7KUiFoodDCJ4VhimXqG..."
+        "adminPassword":
+            "value": "bbspassword"
+        }
+    }
+}
+```
+By default,
 
 ## Contributors
 

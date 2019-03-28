@@ -15,14 +15,14 @@ The templates in this repository use Azure Cloud features to create a resilient 
 *  Security and accessibility principles/rules applied to ensure all customer data is protected.  
 *  Optional SSL and CNAME/domain name support.  
 *  Advanced monitoring and analytics the following integrated services:
-**  Azure Application Insights
-**  Azure Monitor
-**  Azure SQL Analytics
-**  Azure Gateway Analytics
+ **  Azure Application Insights
+ **  Azure Monitor
+ **  Azure SQL Analytics
+ **  Azure Gateway Analytics
 *  Log collection/aggregation.  
 *  Database flexibility:
-**  You can deploy an Azure SQL DB or Postgres database.  
-**  You can supply an existing Azure SQL DB or Postgres database.  
+ **  You can deploy an Azure SQL DB or Postgres database.  
+ **  You can supply an existing Azure SQL DB or Postgres database.  
 *  Integrated Azure Accelerated Networking for enhanced cluster performance.  
 *  Recommended infrastructure/cluster sizing or fully configurable infrastructure options.  
 
@@ -59,19 +59,19 @@ Regardless of what you're installing, you'll *always* need to specify your _jump
     }
 ```
 #### Jumpbox key configuration for Bitbucket
-Bitbucket is slightly different; set your jumpbox key through `sshKey` instead of `jumpoboxSshKey`. You'll also need to set `adminPassword` -- this will allow you to SSH _from_ the jumpbox into the cluster nodes.
+Bitbucket is slightly different; set your jumpbox key through `sshKey` instead of `jumpoboxSshKey`. You'll also need to set `bitbucketAdminPassword` -- this will allow you to SSH _from_ the jumpbox into the cluster nodes.
 ```
 {
     "parameters": {
         "sshKey":
             "value": "ssh-rsa AAAAo2D7KUiFoodDCJ4VhimXqG..."
-        "adminPassword":
+        "bitbucketAdminPassword":
             "value": "bbspassword"
         }
     }
 }
 ```
-By default,
+The default admin username is `bbsadmin`.
 
 ## Contributors
 

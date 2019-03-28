@@ -1,5 +1,5 @@
 ## Deploying via Azure CLI with Node and Gulp
-If you prefer to
+This deployment procedure features a simpler method for overriding the default parameters, but requires Node and Gulp. See [Deploying via Azure CLI with AzCopy](DEVELOPING2.md) for an alternative method.
 
 ## Dependencies
 * Node (`brew install node`), version 7.6+ to support `async`
@@ -23,10 +23,10 @@ Before making changes to the configuration, be sure to first read the *Keeping p
 
 
 1. Clone this Bitbucket repository.
-```
-cd ~/git
-git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
-```
+    ```
+    cd ~/git
+    git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
+    ```
 2. Enter the repository's root directory.
 ```
 cd ~/git/atlassian-azure-deployment

@@ -47,7 +47,7 @@ If you prefer a more bespoke deployment, you're welcome to edit the templates di
 
 Both methods contain recommendations for
 
-### Jumpbox SSH Key Parameter
+### Jumpbox SSH Key configuration
 Regardless of what you're installing, you'll *always* need to specify your _jumpbox key_. Do this through the `jumpboxSshKey` parameter (for all products except Bitbucket). This will allow you to connect via SSH to the jumpbox/bastion node (and then onto the cluster nodes). This key is your device's SSH public key (normally found at `~/.ssh/id_rsa.pub`). Cut/paste this value into the `jumpboxSshKey` parameter like so:
 ```
     {
@@ -58,20 +58,16 @@ Regardless of what you're installing, you'll *always* need to specify your _jump
         }
     }
 ```
-#### Jumpbox key configuration for Bitbucket
-Bitbucket is slightly different; set your jumpbox key through `sshKey` instead of `jumpoboxSshKey`. You'll also need to set `bitbucketAdminPassword` -- this will allow you to SSH _from_ the jumpbox into the cluster nodes.
+With Bitbucket, it's slightly different; set your jumpbox key through `sshKey` instead of `jumpboxSshKey`:
 ```
 {
     "parameters": {
         "sshKey":
             "value": "ssh-rsa AAAAo2D7KUiFoodDCJ4VhimXqG..."
-        "bitbucketAdminPassword":
-            "value": "bbspassword"
         }
     }
 }
 ```
-The default admin username is `bbsadmin`.
 
 ## Contributors
 

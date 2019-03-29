@@ -24,12 +24,14 @@ The templates in this repository use Azure Cloud features to create a resilient 
     *  You can deploy an Azure SQL DB or Postgres database.  
     *  You can supply an existing Azure SQL DB or Postgres database.  
 *  Integrated Azure Accelerated Networking for enhanced cluster performance.  
-*  Recommended infrastructure/cluster sizing or fully configurable infrastructure options.  
-
+*  Recommended infrastructure/cluster sizing or fully configurable infrastructure options.
+*  Configurable Linux OS options for Jumpbox/VMs (Ubuntu LTS 16.04/18.04, RHEL 7.5, Centos 7.5, Debian Stretch 9-backports )
 
 ![Azure Architecture](images/AzureArchitecture.png "Azure Architecture")
 
-## Installation
+For more information on the Atlassian Azure solution, features, install options, and FAQs, check out [Atlassian Azure Page](https://www.atlassian.com/enterprise/data-center/azure)  
+
+## Installation through Azure Marketplace
 
 Each Atlassian application folder contains specific instructions on how to deploy the individual application, so always check there first. You can also find the same templates on the Azure Marketplace (you can also deploy them straight from there):
 
@@ -40,12 +42,14 @@ Each Atlassian application folder contains specific instructions on how to deplo
 
 When you deploy an Atlassian application through the Azure Marketplace, many parameters will be pre-configured for your convenience.
 
-If you prefer a more bespoke deployment, you're welcome to edit the templates directly. When you do, you'll need to deploy via the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest). Choose one of the following methods, depending on which tools you're comfortable with:
+## Installation through CLI
+
+If you prefer a more bespoke deployment, you're welcome to use the templates in this repository directly. When you do, you'll need to deploy via the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest). Choose one of the following methods, depending on which tools you're comfortable with:
 
 *  [Deploying via Azure CLI with Node and Gulp](DEVELOPING.md)
 *  [Deploying via Azure CLI with AzCopy](DEVELOPING2.md)
 
-Both methods contain recommendations for
+Both methods contain recommendations for overriding the default deployment configurations through a _custom parameters template_.
 
 ### Jumpbox SSH Key configuration
 Regardless of what you're installing, you'll *always* need to specify your _jumpbox key_. Do this through the `jumpboxSshKey` parameter (for all products except Bitbucket). This will allow you to connect via SSH to the jumpbox/bastion node (and then onto the cluster nodes). This key is your device's SSH public key (normally found at `~/.ssh/id_rsa.pub`). Cut/paste this value into the `jumpboxSshKey` parameter like so:
@@ -58,7 +62,7 @@ Regardless of what you're installing, you'll *always* need to specify your _jump
         }
     }
 ```
-With Bitbucket, it's slightly different; set your jumpbox key through `sshKey` instead of `jumpboxSshKey`:
+With Bitbucket, it's slightly different. Set your jumpbox key through `sshKey` instead of `jumpboxSshKey`:
 ```
 {
     "parameters": {

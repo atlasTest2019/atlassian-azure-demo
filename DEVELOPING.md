@@ -14,7 +14,7 @@ in the file `azuredeploy.parameters.json`.
 
 ## Keep parameters clean
 
-By default, this deployment process uses the `azuredeploy.parameters.json` parameters template in this repository. To override this, copy it as `azuredeploy.parameters.local.json` to any of the Atlassian application directories. When you deploy an application later, `npm start` will use that file instead.
+By default, this deployment process uses the `azuredeploy.parameters.json` parameters template in this repository. To override this, copy it as `azuredeploy.parameters.local.json` to any of the Atlassian application directories. This is now your _custom parameters template_. The settings in this template will override `azuredeploy.parameters.json` when you deploy an application later.
 
 Files named `azuredeploy.parameters.local.json` will be ignored by GIT, allowing you to test your configuration freely without accidentally checking in your changes. You'll also need to set your SSH key on this file first before any deployment (see [Jumpbox SSH Key Parameter](README.md) for instructions).
 

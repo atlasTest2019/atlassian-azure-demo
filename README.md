@@ -33,18 +33,18 @@ For more information on the Atlassian Azure solution, features, install options,
 
 ## Installation through Azure Marketplace
 
-Each Atlassian application folder contains specific instructions on how to deploy the individual application, so always check there first. You can also find the same templates on the Azure Marketplace (you can also deploy them straight from there):
+Each Atlassian application folder contains specific instructions on how to deploy the individual application, so always check there first. You can also find (and deploy from) the same templates on the Azure Marketplace:
 
 *  [Jira Software Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.jira-data-center)
 *  [Jira Service Desk Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.jira-service-desk)
 *  [Confluence Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.confluence-data-center)
 *  [Bitbucket Data Center](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/atlassian.bbsdc)
 
-When you deploy an Atlassian application through the Azure Marketplace, many parameters will be pre-configured for your convenience.
+When you deploy using these Azure Marketplace templates, many parameters will be pre-configured for your convenience.
 
 ## Installation through CLI
 
-If you prefer a more bespoke deployment, you're welcome to use the templates in this repository directly. When you do, you'll need to deploy via the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest). Choose one of the following methods, depending on which tools you're comfortable with:
+If you prefer a more customized deployment, you're welcome to use the templates in this repository directly. When you do, you'll need to deploy via the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest). Choose one of the following methods, depending on which tools you're comfortable with:
 
 *  [Deploying via Azure CLI with Node and Gulp](DEVELOPING.md)
 *  [Deploying via Azure CLI with AzCopy](DEVELOPING2.md)

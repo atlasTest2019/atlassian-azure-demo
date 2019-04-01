@@ -461,7 +461,11 @@
             "allowedValues": [
                 "Free",
                 "PerNode",
-                "Standalone"
+                "Standalone",
+                "Standard",
+                "Premium",
+                "Unlimited",
+                "PerGB2018"
             ],
             "metadata": {
                 "description": "Workspace SKU"

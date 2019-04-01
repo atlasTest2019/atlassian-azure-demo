@@ -3,7 +3,7 @@
 ## Purpose
 This repository contains Azure ARM templates to install the following [Atlassian Data Center](https://www.atlassian.com/enterprise/data-center) products:  
 
-1. [BitBucket Data Center](https://www.atlassian.com/software/bitbucket/enterprise/data-center)  
+1. [Bitbucket Data Center](https://www.atlassian.com/software/bitbucket/enterprise/data-center)  
 2. [Confluence Data Center](https://www.atlassian.com/software/confluence/enterprise/data-center)  
 3. [Jira Software Data Center](https://www.atlassian.com/enterprise/data-center/jira)  
 4. [Jira Service Desk Data Center](https://www.atlassian.com/software/jira/service-desk/enterprise/data-center)  

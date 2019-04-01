@@ -465,7 +465,11 @@
             "allowedValues": [
                 "Free",
                 "PerNode",
-                "Standalone"
+                "Standalone",
+                "Standard",
+                "Premium",
+                "Unlimited",
+                "PerGB2018"
             ],
             "metadata": {
                 "description": "Workspace SKU. Note that if the 'confClusterSize' parameter is used this value will be ignored."

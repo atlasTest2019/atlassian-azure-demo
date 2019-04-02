@@ -468,7 +468,7 @@
                 "PerGB2018"
             ],
             "metadata": {
-                "description": "Workspace SKU"
+                "description": "Workspace SKU Pricing Tier. Options depends upon Azure Subscription."
             }
         },
         "enableEmailAlerts": {
@@ -573,13 +573,6 @@
                 "medium": "Standard_B1s",
                 "large": "Standard_B1s",
                 "enterprise": "Standard_B1s"
-            },
-            "workspaceSku": {
-                "trial": "Free",
-                "small": "Free",
-                "medium": "PerNode",
-                "large": "PerNode",
-                "enterprise": "PerNode"
             }
         }
     },
@@ -759,7 +752,7 @@
                         "value": "[parameters('enableAcceleratedNetworking')]"
                     },
                     "workspaceSku": {
-                        "value": "[if(variables('isJiraClusterSizeUsed'), variables('clusterLookup').workspaceSku[parameters('jiraClusterSize')], parameters('workspaceSku'))]"
+                        "value": "[parameters('workspaceSku')]"
                     },
                     "clusterVmDiskSize": {
                         "value": "[parameters('clusterVmDiskSize')]"

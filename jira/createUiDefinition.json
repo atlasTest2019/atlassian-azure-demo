@@ -894,6 +894,47 @@
             "visible": true
           },
           {
+            "name": "workspaceSku",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Configure Log Analytics Workspace Pricing Tier",
+            "defaultValue": "Per GB (New Subscription Tier)",
+            "toolTip": "Select Log Analytics Workspace SKU. Options depend on your Azure Subscription. If you have an Azure subscription greater in 2018 or later, use Per GB. If created before, use Free to start with.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Per GB (New Subscription Tier)",
+                  "value": "PerGB2018"
+                },
+                {
+                  "label": "Free (Old Subscription Tier)",
+                  "value": "Free"
+                },
+                {
+                  "label": "Per Node (Old Subscription Tier)",
+                  "value": "PerNode"
+                },
+                {
+                  "label": "Standalone (Old Subscription Tier)",
+                  "value": "Standalone"
+                },
+                {
+                  "label": "Standard (Old Subscription Tier)",
+                  "value": "Standard"
+                },
+                {
+                  "label": "Premium (Old Subscription Tier)",
+                  "value": "Premium"
+                },
+                {
+                  "label": "Unlimited (Old Subscription Tier)",
+                  "value": "Unlimited"
+                }
+              ],
+              "required": true
+            },
+            "visible": "[equals(steps('monitoring').enableAnalytics, 'yes')]"
+          },
+          {
             "name": "appAnalyticsCheck",
             "type": "Microsoft.Common.InfoBox",
             "visible": "[and(equals(steps('monitoring').enableAnalytics, 'yes'), not(contains('eastus, westeurope, southeastasia, centralindia, canadacentral, australiasoutheast, westcentralus, japaneast, uksouth, northeurope, southcentralus, westus2', location())))]",
@@ -942,7 +983,8 @@
       "sslPfxCertificatePassword": "[steps('domain').sslSection.sslPfxCertificatePassword]",
       "enableEmailAlerts": "[equals(steps('monitoring').enableEmailAlerts, 'yes')]",
       "enableApplicationInsights": "[equals(steps('monitoring').enableAppInsights, 'yes')]",
-      "enableAnalytics": "[equals(steps('monitoring').enableAnalytics, 'yes')]"
+      "enableAnalytics": "[equals(steps('monitoring').enableAnalytics, 'yes')]",
+      "workspaceSku": "[steps('monitoring').workspaceSku]"
     }
   }
 }

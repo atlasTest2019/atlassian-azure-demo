@@ -42,8 +42,8 @@
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                 "description": "Use this URL to override standard Atlassian download url eg for EAP, RC versions. NB will be used in conjunction with the confluenceVersion parameter."
-             }
+                "description": "Use this URL to override standard Atlassian download url eg for EAP, RC versions. NB will be used in conjunction with the confluenceVersion parameter."
+            }
         },
         "dbCreateNew": {
             "type": "bool",
@@ -472,7 +472,7 @@
                 "PerGB2018"
             ],
             "metadata": {
-                "description": "Workspace SKU. Note that if the 'confClusterSize' parameter is used this value will be ignored."
+                "description": "Workspace SKU Pricing Tier. Options depends upon Azure Subscription."
             }
         },
         "enableEmailAlerts": {
@@ -575,13 +575,6 @@
                 "medium": "Standard_B1s",
                 "large": "Standard_B1s",
                 "enterprise": "Standard_B1s"
-            },
-            "workspaceSku": {
-                "trial": "Free",
-                "small": "Free",
-                "medium": "PerNode",
-                "large": "PerNode",
-                "enterprise": "PerNode"
             }
         }
     },
@@ -764,7 +757,7 @@
                         "value": "[parameters('enableAcceleratedNetworking')]"
                     },
                     "workspaceSku": {
-                        "value": "[if(variables('isConfClusterSizeUsed'), variables('clusterLookup').workspaceSku[parameters('confClusterSize')], parameters('workspaceSku'))]"
+                        "value": "[ parameters('workspaceSku')]"
                     },
                     "clusterVmDiskSize": {
                         "value": "[parameters('clusterVmDiskSize')]"

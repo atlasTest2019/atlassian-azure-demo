@@ -472,7 +472,7 @@
                 "PerGB2018"
             ],
             "metadata": {
-                "description": "Workspace SKU Pricing Tier. Options depends upon Azure Subscription."
+                "description": "Workspace SKU Pricing Tier. Options depend upon when Azure Subscription created. If after 2018, use 'PerGB2018' otherwise 'Free'."
             }
         },
         "enableEmailAlerts": {

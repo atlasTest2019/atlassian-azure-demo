@@ -6,7 +6,7 @@ This page contains alternative methods to the ones found on [Deploying via Azure
 * [AzCopy](https://github.com/Azure/azure-storage-azcopy)  
 
 
-## Creating a parameters template
+## Creating a custom parameters template
 
 A _custom paramaters template_ is a JSON file that contains parameters for a customized deployment. You can use this template as a basis for other templates; for example, you can have separate custom parameters templates for Confluence, Jira Service Desk, or similar instances with different database schemas.
 

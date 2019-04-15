@@ -31,7 +31,7 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
     ```
 
     ```
-      ...
+      [...]
       "primaryEndpoints": {
         "blob": "https://storageaccount.blob.core.windows.net/",
         "dfs": null,
@@ -41,7 +41,7 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
         "web": null
         },
 
-      ...
+      [...]
     ```
 
 3. Create a [SAS token](https://docs.microsoft.com/en-us/cli/azure/storage/account?view=azure-cli-latest#az-storage-account-generate-sas).

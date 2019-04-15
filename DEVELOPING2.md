@@ -15,6 +15,7 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
     ```
     cd ~/git
     ```
+
     ```
     git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
     ```
@@ -24,9 +25,11 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
     ```
     az group create --name blobstoreresourcegroup --location eastus
     ```
+
     ```
     az storage account create --name storageaccount --resource-group blobstoreresourcegroup --location eastus --sku Standard_LRS
     ```
+
     ```
       ...
       "primaryEndpoints": {
@@ -67,6 +70,7 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
     ```
     mkdir -p ~/atlassian/templates
     ```
+
     ```
     cp azuredeploy.parameters.json ~/atlassian/templates/myparameterstemplate.json
     ```
@@ -117,9 +121,11 @@ At this point, you can now deploy using this new parameters template.
 
 ## Deploying via Azure CLI
 Use the `--parameters` option reference a specific parameters template during deployment. For example, to deploy an instance using `~/atlassian/templates/myparameterstemplate.json`:
+
 ```
 cd ~/git/atlassian-azure-deployment/jira
 ```
+
 ```
 az group create --resource-group mydeployresourcegroup --location canadacentral
 ~/atlassian/bin/azupload && az group deployment create --resource-group mydeployresourcegroup --template-file azuredeploy.json --parameters ~/atlassian/templates/myparameterstemplate.json

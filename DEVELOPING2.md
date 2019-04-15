@@ -6,7 +6,7 @@ This page contains alternative methods to the ones found on [Deploying via Azure
 * [AzCopy](https://github.com/Azure/azure-storage-azcopy)  
 
 
-## Creating a parameters template
+## Creating a custom parameters template
 
 A _custom paramaters template_ is a JSON file that contains parameters for a customized deployment. You can use this template as a basis for other templates; for example, you can have separate custom parameters templates for Confluence, Jira Service Desk, or similar instances with different database schemas.
 
@@ -14,6 +14,9 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
 
     ```
     cd ~/git
+    ```
+
+    ```
     git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
     ```
 
@@ -21,8 +24,14 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
 
     ```
     az group create --name blobstoreresourcegroup --location eastus
+    ```
+
+    ```
     az storage account create --name storageaccount --resource-group blobstoreresourcegroup --location eastus --sku Standard_LRS
-      ...
+    ```
+
+    ```
+    [...]
       "primaryEndpoints": {
         "blob": "https://storageaccount.blob.core.windows.net/",
         "dfs": null,
@@ -31,8 +40,8 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
         "table": "https://storageaccount.table.core.windows.net/",
         "web": null
         },
-      ...
-      ```
+    [...]
+    ```
 
 3. Create a [SAS token](https://docs.microsoft.com/en-us/cli/azure/storage/account?view=azure-cli-latest#az-storage-account-generate-sas).
 
@@ -59,14 +68,21 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
 
     ```
     mkdir -p ~/atlassian/templates
+    ```
+
+    ```
     cp azuredeploy.parameters.json ~/atlassian/templates/myparameterstemplate.json
     ```
+
     The `~/atlassian/templates/myparameterstemplate.json` file is your new _parameters file_, which you can now edit to suit your needs.
 
 
 Before you can use your parameters template in a deployment, open it first and update the following parameters:
+
 * `_artifactsLocation`: the blob primary endpoint. By default, this parameter will point to the `master` branch in this Bitbucket repo.
+
 * `_artifactsLocationSasToken`: the SAS token you generated in step 3.
+
 * `jumpboxSshKey`: your SSH public key (for example, `~/.ssh/id_rsa.pub`).
 
 For example:
@@ -107,8 +123,12 @@ At this point, you can now deploy using this new parameters template.
 
 ## Deploying via Azure CLI
 Use the `--parameters` option reference a specific parameters template during deployment. For example, to deploy an instance using `~/atlassian/templates/myparameterstemplate.json`:
+
 ```
 cd ~/git/atlassian-azure-deployment/jira
+```
+
+```
 az group create --resource-group mydeployresourcegroup --location canadacentral
 ~/atlassian/bin/azupload && az group deployment create --resource-group mydeployresourcegroup --template-file azuredeploy.json --parameters ~/atlassian/templates/myparameterstemplate.json
 ```

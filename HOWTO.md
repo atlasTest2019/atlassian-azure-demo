@@ -22,6 +22,8 @@ Azure doesn't register domain names, so you'll have to secure yours through a se
 
 When you set a custom domain like `mycustomdomainname.com`, our templates will create a DNS Zone called `jira.mycustomdomainname.com` configured with the relevant Azure DNS Name Servers. You can add these Azure Name Servers to your domain configuration to provide a public endpoint of http://jira.mycustomdomainname.com.
 
+For more information, see https://docs.microsoft.com/en-us/azure/dns/dns-zones-records.
+
 ### SSL
 
 From the Azure Marketplace templates, you can enable HTTPS/SSL and configure it through the *Configure Domain* step. There, you'll be asked to provide your own _Base64-encoded PFX certificate_ and its corresponding password.
@@ -40,6 +42,8 @@ For CLI deployments, use the `sslBase64EncodedPfxCertificate` and `sslPfxCertifi
         }
     }
 ```
+
+For more information, see https://docs.microsoft.com/en-us/azure/application-gateway/redirect-http-to-https-cli.
 
 ## Advanced customizations
 

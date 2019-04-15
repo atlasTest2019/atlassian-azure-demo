@@ -26,6 +26,8 @@ Before making changes to the configuration, be sure to first read the *Keeping p
 
     ```
     cd ~/git
+    ```
+    ```
     git clone git@bitbucket.org:atlassian/atlassian-azure-deployment.git
     ```
 

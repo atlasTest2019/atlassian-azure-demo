@@ -79,8 +79,11 @@ A _custom paramaters template_ is a JSON file that contains parameters for a cus
 
 
 Before you can use your parameters template in a deployment, open it first and update the following parameters:
+
 * `_artifactsLocation`: the blob primary endpoint. By default, this parameter will point to the `master` branch in this Bitbucket repo.
+
 * `_artifactsLocationSasToken`: the SAS token you generated in step 3.
+
 * `jumpboxSshKey`: your SSH public key (for example, `~/.ssh/id_rsa.pub`).
 
 For example:

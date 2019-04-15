@@ -43,7 +43,7 @@ For CLI deployments, use the `sslBase64EncodedPfxCertificate` and `sslPfxCertifi
     }
 ```
 
-For more information, see https://docs.microsoft.com/en-us/azure/application-gateway/redirect-http-to-https-cli.
+With HTTPS enabled, all incoming HTTP traffic will be redirected to HTTPS for added security. For more information, see https://docs.microsoft.com/en-us/azure/application-gateway/redirect-http-to-https-cli.
 
 ## Advanced customizations
 

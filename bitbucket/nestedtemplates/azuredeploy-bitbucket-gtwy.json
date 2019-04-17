@@ -1,0 +1,206 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Azure region (WestUS, CentralUs, AustraliaEast, etc) shared by all of the resources in the template"
+            }
+        },
+        "appGatewaySize": {
+            "type": "string",
+            "defaultValue": "Medium",
+            "allowedValues": [
+                "Small",
+                "Medium",
+                "Large"
+            ],
+            "metadata": {
+                "description": "The size of Application Gateway. Can be small, medium and large."
+            }
+        },
+        "bbsHttpPort": {
+            "type": "string",
+            "defaultValue": "7990",
+            "metadata": {
+                "description": "Internal port that Bitbucket Server uses to accept HTTP connections"
+            }
+        },
+        "appGatewayProbeInterval": {
+            "type": "int",
+            "defaultValue": 5,
+            "metadata": {
+                "description": "The interval in seconds for Application Gateway to very that Bitbucket Server node is available"
+            }
+        },
+        "appGatewayCapacity": {
+            "type": "int",
+            "defaultValue": 1,
+            "metadata": {
+                "description": "Amount of Application Gateway instances to created"
+            }
+        },
+        "vnetName": {
+            "type": "string"
+        },
+        "appGtwySubnetName": {
+            "type": "string"
+        },
+        "gtwyIpName": {
+            "type": "string",
+            "metadata": {
+                "description": "App Gateway IP Address Name"
+            }
+        }
+    },
+    "variables": {
+        "namespace": "bitbucket",
+        "tags": {
+            "vendor": "Atlassian",
+            "product": "Bitbucket Server",
+            "provider": "2F0AF47A-92C7-413A-9009-C3815BFF7AF6"
+        },
+        "lookup": {
+            "appGw": {
+                "sizeToTier": {
+                    "Standard_Small": "Standard",
+                    "Standard_Medium": "Standard",
+                    "Standard_Large": "Standard",
+                    "WAF_Medium": "WAF",
+                    "WAF_Large": "WAF"
+                }
+            }
+        },
+        "net": {
+            "appGw": {
+                "name": "[concat(variables('namespace'), '-app-gw')]",
+                "probe": {
+                    "interval": "[parameters('appGatewayProbeInterval')]",
+                    "timeout": 10,
+                    "unhealthyThreshold": 1
+                },
+                "tier": "[variables('lookup').appGw.sizeToTier[concat('Standard_', parameters('appGatewaySize'))]]",
+                "size": "[concat('Standard_', parameters('appGatewaySize'))]",
+                "capacity": "[parameters('appGatewayCapacity')]",
+                "names": {
+                    "ipConfig": "[concat(variables('namespace'), '-app-gw', '-ip-cfg')]",
+                    "fendIp": "[concat(variables('namespace'), '-app-gw', '-fend')]",
+                    "fendPort": "[concat(variables('namespace'), '-app-gw', '-fend-port')]",
+                    "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]",
+                    "bendHttpSettings": "[concat(variables('namespace'), '-app-gw', '-bend-http')]",
+                    "httpListener": "[concat(variables('namespace'), '-app-gw', '-listener')]",
+                    "routeRule": "[concat(variables('namespace'), '-app-gw', '-route-rule')]",
+                    "probe": "[concat(variables('namespace'), '-app-gw', '-probe')]"
+                }
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/applicationGateways",
+            "location": "[parameters('location')]",
+            "apiVersion": "2017-10-01",
+            "tags": "[variables('tags')]",
+            "name": "[variables('net').appGw.name]",
+            "properties": {
+                "sku": {
+                    "name": "[variables('net').appGw.size]",
+                    "tier": "[variables('net').appGw.tier]",
+                    "capacity": "[variables('net').appGw.capacity]"
+                },
+                "gatewayIPConfigurations": [
+                    {
+                        "name": "[variables('net').appGw.names.ipConfig]",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('appGtwySubnetName'))]"
+                            }
+                        }
+                    }
+                ],
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('net').appGw.names.fendIp]",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('gtwyIpName'))]"
+                            }
+                        }
+                    }
+                ],
+                "frontendPorts": [
+                    {
+                        "name": "[variables('net').appGw.names.fendPort]",
+                        "properties": {
+                            "port": 80
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('net').appGw.names.bend]"
+                    }
+                ],
+                "backendHttpSettingsCollection": [
+                    {
+                        "name": "[variables('net').appGw.names.bendHttpSettings]",
+                        "properties": {
+                            "port": "[parameters('bbsHttpPort')]",
+                            "protocol": "Http",
+                            "cookieBasedAffinity": "Enabled",
+                            "affinityCookieName": "AZURESESSIONID",
+                            "requestTimeout": 7200
+                        }
+                    }
+                ],
+                "httpListeners": [
+                    {
+                        "name": "[variables('net').appGw.names.httpListener]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/frontendIPConfigurations/', variables('net').appGw.names.fendIp)]"
+                            },
+                            "frontendPort": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/frontendPorts/', variables('net').appGw.names.fendPort)]"
+                            },
+                            "protocol": "Http"
+                        }
+                    }
+                ],
+                "requestRoutingRules": [
+                    {
+                        "name": "[variables('net').appGw.names.routeRule]",
+                        "properties": {
+                            "ruleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/httpListeners/', variables('net').appGw.names.httpListener)]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendAddressPools/', variables('net').appGw.names.bend)]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendHttpSettingsCollection/', variables('net').appGw.names.bendHttpSettings)]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('net').appGw.names.probe]",
+                        "properties": {
+                            "protocol": "Http",
+                            "path": "/status",
+                            "interval": "[variables('net').appGw.probe.interval]",
+                            "timeout": "[variables('net').appGw.probe.timeout]",
+                            "unhealthyThreshold": "[variables('net').appGw.probe.unhealthyThreshold]",
+                            "pickHostNameFromBackendHttpSettings": true
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {}
+}

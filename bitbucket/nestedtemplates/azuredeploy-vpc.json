@@ -96,32 +96,6 @@
                 "description": "The size of the VM that is used for NFS server."
             }
         },
-        "appGatewaySize": {
-            "type": "string",
-            "defaultValue": "Medium",
-            "allowedValues": [
-                "Small",
-                "Medium",
-                "Large"
-            ],
-            "metadata": {
-                "description": "The size of Application Gateway. Can be small, medium and large."
-            }
-        },
-        "appGatewayProbeInterval": {
-            "type": "int",
-            "defaultValue": 5,
-            "metadata": {
-                "description": "The interval in seconds for Application Gateway to very that Bitbucket Server node is available"
-            }
-        },
-        "appGatewayCapacity": {
-            "type": "int",
-            "defaultValue": 1,
-            "metadata": {
-                "description": "Amount of Application Gateway instances to created"
-            }
-        },
         "httpGatewaySize": {
             "type": "string",
             "allowedValues": [
@@ -227,29 +201,6 @@
                     "cidr": "[parameters('bbsNetCIDR')]"
                 }
             },
-            "appGw": {
-                "name": "[concat(variables('namespace'), '-app-gw')]",
-                "dns": "[concat(variables('namespace'), '-', variables('suffix'))]",
-                "probe": {
-                    "interval": "[parameters('appGatewayProbeInterval')]",
-                    "timeout": 10,
-                    "unhealthyThreshold": 1
-                },
-                "tier": "[variables('lookup').appGw.sizeToTier[concat('Standard_', parameters('appGatewaySize'))]]",
-                "size": "[concat('Standard_', parameters('appGatewaySize'))]",
-                "capacity": "[parameters('appGatewayCapacity')]",
-                "names": {
-                    "publicIP": "[concat(variables('namespace'), '-app-gw', '-public-ip')]",
-                    "ipConfig": "[concat(variables('namespace'), '-app-gw', '-ip-cfg')]",
-                    "fendIp": "[concat(variables('namespace'), '-app-gw', '-fend')]",
-                    "fendPort": "[concat(variables('namespace'), '-app-gw', '-fend-port')]",
-                    "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]",
-                    "bendHttpSettings": "[concat(variables('namespace'), '-app-gw', '-bend-http')]",
-                    "httpListener": "[concat(variables('namespace'), '-app-gw', '-listener')]",
-                    "routeRule": "[concat(variables('namespace'), '-app-gw', '-route-rule')]",
-                    "probe": "[concat(variables('namespace'), '-app-gw', '-probe')]"
-                }
-            },
             "lb": {
                 "name": "[concat(variables('namespace'), '-lb')]",
                 "dns": "[concat(variables('namespace'), '-ssh-', variables('suffix'))]",
@@ -284,17 +235,6 @@
                     "publisher": "Canonical",
                     "offer": "UbuntuServer",
                     "sku": "16.04.0-LTS"
-                }
-            }
-        },
-        "lookup": {
-            "appGw": {
-                "sizeToTier": {
-                    "Standard_Small": "Standard",
-                    "Standard_Medium": "Standard",
-                    "Standard_Large": "Standard",
-                    "WAF_Medium": "WAF",
-                    "WAF_Large": "WAF"
                 }
             }
         }
@@ -581,23 +521,6 @@
             }
         },
         {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "apiVersion": "2017-10-01",
-            "name": "[variables('net').appGw.names.publicIP]",
-            "location": "[parameters('location')]",
-            "tags": "[variables('tags')]",
-            "sku": {
-                "name": "Basic"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Dynamic",
-                "dnsSettings": {
-                    "domainNameLabel": "[variables('net').appGw.dns]"
-                },
-                "idleTimeoutInMinutes": 30
-            }
-        },
-        {
             "type": "Microsoft.Network/loadBalancers",
             "apiVersion": "2017-10-01",
             "location": "[parameters('location')]",
@@ -763,10 +686,6 @@
         }
     ],
     "outputs": {
-        "appGatewayFqdn": {
-            "type": "string",
-            "value": "[reference(variables('net').appGw.names.publicIP).dnsSettings.fqdn]"
-        },
         "ssh": {
             "type": "string",
             "value": "[reference(variables('net').lb.names.publicIP).dnsSettings.fqdn]"

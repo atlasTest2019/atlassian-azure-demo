@@ -273,21 +273,6 @@
                 "description": "Amount of Application Gateway instances to created"
             }
         },
-        "httpGatewaySize": {
-            "type": "string",
-            "allowedValues": [
-                "Standard_D2s_v3",
-                "Standard_D4s_v3",
-                "Standard_D8s_v3",
-                "Standard_D16s_v3",
-                "Standard_D32s_v3",
-                "Standard_D64s_v3"
-            ],
-            "defaultValue": "Standard_D2s_v3",
-            "metadata": {
-                "description": "VM type which used for forwarding HTTP traffic from Load Balancer to Application Gateway"
-            }
-        },
         "license": {
             "type": "securestring",
             "defaultValue": "AAABpg0ODAoPeNp1kUtP20AUhff+FVfqLtI4DkkgRLLUYA+UqtiR7SzawmLiXPBQe8aaR9r013ewDYG2LGZzH2fO+e6HorKQyD0ECwhmy/lsOZ3D1U0BJ8Fk4SW22aJK7zcalQ7JxIukMKw0CWswfDSVbJj+yEzNtOZM+KVsPG2YrvwvvEShsTi02M3mxSoraPZv96WztqqsmMaYGQyfPieTCQkW3ntKQ53+ark6dEvr6fT007NDesN4/Y7FHNUe1XUcXtAzSmbxtxNymn4+I1fT88Xg0AmyCIVBFRpl0cvtVpeKt4ZL0VdGo1GSFuQyzcg6S+NNVFynCdnk1DXCSKFztIPtAUyFMHgFKkq5QwWtko9YGvheGdPeLsfjB+m/sTiu+w2C/cadD7EEIQ3suDaKb61Bp8w1GAml1UY27kC+50I7z4KJ8jUYR/N8oNmnc3z4Hl9yRBldFTQmF1+fvP+f2RDBQduIH0L+FF5Ok9A9Mg8CL1UPTHDNOjyr31YhxNjW8tA4hl5Hw3X+Pm2MR6Z0z2rbTcGQHe6lgl5rd9Q6zvX2/wDFKfAUMCsCFH8cSCeQYWgwBdkxpTeUqGiTfg2qAhNxOHcjUrs7UMuuXFQw4T4+mxFqX02k8",
@@ -363,12 +348,6 @@
                 "description": "NFS Private IP Address"
             }
         },
-        "appGatewayFqdn": {
-            "type": "string",
-            "metadata": {
-                 "description": "App Gateway FQDN"
-             }
-         },
          "lbFqdn": {
             "type": "string",
             "metadata": {
@@ -384,6 +363,7 @@
             "product": "Bitbucket Server",
             "provider": "2F0AF47A-92C7-413A-9009-C3815BFF7AF6"
         },
+        "appGtwyTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-gtwy.json', parameters('_artifactsLocationSasToken')))]",
         "net": {
             "vnet": {
                 "name": "[concat(variables('namespace'), '-vnet')]",
@@ -460,26 +440,7 @@
             },
             "appGw": {
                 "name": "[concat(variables('namespace'), '-app-gw')]",
-                "dns": "[concat(variables('namespace'), '-', variables('suffix'))]",
-                "probe": {
-                    "interval": "[parameters('appGatewayProbeInterval')]",
-                    "timeout": 10,
-                    "unhealthyThreshold": 1
-                },
-                "tier": "[variables('lookup').appGw.sizeToTier[concat('Standard_', parameters('appGatewaySize'))]]",
-                "size": "[concat('Standard_', parameters('appGatewaySize'))]",
-                "capacity": "[parameters('appGatewayCapacity')]",
-                "names": {
-                    "publicIP": "[concat(variables('namespace'), '-app-gw', '-public-ip')]",
-                    "ipConfig": "[concat(variables('namespace'), '-app-gw', '-ip-cfg')]",
-                    "fendIp": "[concat(variables('namespace'), '-app-gw', '-fend')]",
-                    "fendPort": "[concat(variables('namespace'), '-app-gw', '-fend-port')]",
-                    "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]",
-                    "bendHttpSettings": "[concat(variables('namespace'), '-app-gw', '-bend-http')]",
-                    "httpListener": "[concat(variables('namespace'), '-app-gw', '-listener')]",
-                    "routeRule": "[concat(variables('namespace'), '-app-gw', '-route-rule')]",
-                    "probe": "[concat(variables('namespace'), '-app-gw', '-probe')]"
-                }
+                "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]"
             },
             "lb": {
                 "name": "[concat(variables('namespace'), '-lb')]",
@@ -588,15 +549,6 @@
                     "P11": "Premium",
                     "P15": "Premium"
                 }
-            },
-            "appGw": {
-                "sizeToTier": {
-                    "Standard_Small": "Standard",
-                    "Standard_Medium": "Standard",
-                    "Standard_Large": "Standard",
-                    "WAF_Medium": "WAF",
-                    "WAF_Large": "WAF"
-                }
             }
         },
         "bitbucket": {
@@ -630,7 +582,8 @@
             "SQL": "[replace(replace(replace(replace(string(variables('env').SQL), '[\"', ''), '\"]', ''), '\",\"', ''), '\\\"', '\"')]",
             "BBS": "[replace(replace(replace(replace(string(variables('env').BBS), '[\"', ''), '\"]', ''), '\",\"', ''), '\\\"', '\"')]"
         },
-        "reader-role": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]"
+        "reader-role": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+        "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
@@ -644,6 +597,64 @@
                 "roleDefinitionId": "[variables('reader-role')]",
                 "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/', variables('vm').bbs.name),'/providers/Microsoft.ManagedIdentity/Identities/default'),'2015-08-31-PREVIEW').principalId]",
                 "scope": "[resourceGroup().id]"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2017-10-01",
+            "name": "[variables('gtwyIpName')]",
+            "location": "[parameters('location')]",
+            "tags": "[variables('tags')]",
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('gtwyIpName')]"
+                },
+                "idleTimeoutInMinutes": 30
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "appGtwyTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[variables('gtwyIpName')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('appGtwyTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "appGatewayCapacity": {
+                        "value": "[parameters('appGatewayCapacity')]"
+                    },
+                    "appGatewayProbeInterval": {
+                        "value": "[parameters('appGatewayProbeInterval')]"
+                    },
+                    "appGatewaySize": {
+                        "value": "[parameters('appGatewaySize')]"
+                    },
+                    "bbsHttpPort": {
+                        "value": "[parameters('bbsHttpPort')]"
+                    },
+                    "vnetName": {
+                        "value": "[variables('net').vnet.name]"
+                    }             ,
+                    "appGtwySubnetName": {
+                        "value": "[variables('net').subnets.appgw.name]"
+                    },
+                    "gtwyIpName": {
+                        "value": "[variables('gtwyIpName')]"
+                    }
+                }
             }
         },
         {
@@ -744,109 +755,6 @@
                     }
                 }
             ]
-        },
-        {
-            "type": "Microsoft.Network/applicationGateways",
-            "location": "[parameters('location')]",
-            "apiVersion": "2017-10-01",
-            "tags": "[variables('tags')]",
-            "name": "[variables('net').appGw.name]",
-            "properties": {
-                "sku": {
-                    "name": "[variables('net').appGw.size]",
-                    "tier": "[variables('net').appGw.tier]",
-                    "capacity": "[variables('net').appGw.capacity]"
-                },
-                "gatewayIPConfigurations": [
-                    {
-                        "name": "[variables('net').appGw.names.ipConfig]",
-                        "properties": {
-                            "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('net').vnet.name, variables('net').subnets.appgw.name)]"
-                            }
-                        }
-                    }
-                ],
-                "frontendIPConfigurations": [
-                    {
-                        "name": "[variables('net').appGw.names.fendIp]",
-                        "properties": {
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('net').appGw.names.publicIP)]"
-                            }
-                        }
-                    }
-                ],
-                "frontendPorts": [
-                    {
-                        "name": "[variables('net').appGw.names.fendPort]",
-                        "properties": {
-                            "port": 80
-                        }
-                    }
-                ],
-                "backendAddressPools": [
-                    {
-                        "name": "[variables('net').appGw.names.bend]"
-                    }
-                ],
-                "backendHttpSettingsCollection": [
-                    {
-                        "name": "[variables('net').appGw.names.bendHttpSettings]",
-                        "properties": {
-                            "port": "[parameters('bbsHttpPort')]",
-                            "protocol": "Http",
-                            "cookieBasedAffinity": "Enabled",
-                            "affinityCookieName": "AZURESESSIONID",
-                            "requestTimeout": 7200
-                        }
-                    }
-                ],
-                "httpListeners": [
-                    {
-                        "name": "[variables('net').appGw.names.httpListener]",
-                        "properties": {
-                            "frontendIPConfiguration": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/frontendIPConfigurations/', variables('net').appGw.names.fendIp)]"
-                            },
-                            "frontendPort": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/frontendPorts/', variables('net').appGw.names.fendPort)]"
-                            },
-                            "protocol": "Http"
-                        }
-                    }
-                ],
-                "requestRoutingRules": [
-                    {
-                        "name": "[variables('net').appGw.names.routeRule]",
-                        "properties": {
-                            "ruleType": "Basic",
-                            "httpListener": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/httpListeners/', variables('net').appGw.names.httpListener)]"
-                            },
-                            "backendAddressPool": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendAddressPools/', variables('net').appGw.names.bend)]"
-                            },
-                            "backendHttpSettings": {
-                                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendHttpSettingsCollection/', variables('net').appGw.names.bendHttpSettings)]"
-                            }
-                        }
-                    }
-                ],
-                "probes": [
-                    {
-                        "name": "[variables('net').appGw.names.probe]",
-                        "properties": {
-                            "protocol": "Http",
-                            "path": "/status",
-                            "interval": "[variables('net').appGw.probe.interval]",
-                            "timeout": "[variables('net').appGw.probe.timeout]",
-                            "unhealthyThreshold": "[variables('net').appGw.probe.unhealthyThreshold]",
-                            "pickHostNameFromBackendHttpSettings": true
-                        }
-                    }
-                ]
-            }
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
@@ -1001,7 +909,7 @@
                                                 },
                                                 "applicationGatewayBackendAddressPools": [
                                                     {
-                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendAddressPools/', variables('net').appGw.names.bend)]"
+                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendAddressPools/', variables('net').appGw.bend)]"
                                                     }
                                                 ],
                                                 "loadBalancerBackendAddressPools": [
@@ -1035,7 +943,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', reference(variables('sql').server.name).fullyQualifiedDomainName, '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
+                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', reference(variables('sql').server.name).fullyQualifiedDomainName, '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', reference(variables('gtwyIpName')).dnsSettings.fqdn, '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
                         }
                     }
                 }
@@ -1045,7 +953,7 @@
     "outputs": {
         "appGatewayFqdn": {
             "type": "string",
-            "value": "[parameters('appGatewayFqdn')]"
+            "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
         },
         "ssh": {
             "type": "string",

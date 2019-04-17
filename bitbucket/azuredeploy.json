@@ -387,15 +387,6 @@
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
                     },
-                    "appGatewayCapacity": {
-                        "value": "[parameters('appGatewayCapacity')]"
-                    },
-                    "appGatewayProbeInterval": {
-                        "value": "[parameters('appGatewayProbeInterval')]"
-                    },
-                    "appGatewaySize": {
-                        "value": "[parameters('appGatewaySize')]"
-                    },
                     "appgwNetCIDR": {
                         "value": "[parameters('appgwNetCIDR')]"
                     },
@@ -407,6 +398,9 @@
                     },
                     "bbsNetCIDR": {
                         "value": "[parameters('bbsNetCIDR')]"
+                    },
+                    "httpGatewaySize": {
+                        "value": "[parameters('httpGatewaySize')]"
                     },
                     "jumpboxHostname": {
                         "value": "[parameters('jumpboxHostname')]"
@@ -533,9 +527,6 @@
                     "esNodeSize": {
                         "value": "[parameters('esNodeSize')]"
                     },
-                    "httpGatewaySize": {
-                        "value": "[parameters('httpGatewaySize')]"
-                    },
                     "jumpboxHostname": {
                         "value": "[parameters('jumpboxHostname')]"
                     },
@@ -572,9 +563,6 @@
                     "nfsPrivateIpAddress": {
                         "value": "[reference('vpcTemplate').outputs.nfsPrivateIpAddress.value]"
                     },
-                    "appGatewayFqdn": {
-                        "value": "[reference('vpcTemplate').outputs.appGatewayFqdn.value]"
-                    },
                     "lbFqdn": {
                         "value": "[reference('vpcTemplate').outputs.lbFqdn.value]"
                     }
@@ -590,7 +578,7 @@
         },
         "appGatewayFqdn": {
             "type": "string",
-            "value": "[reference('vpcTemplate').outputs.appGatewayFqdn.value]"
+            "value": "[reference('bitbucketTemplate').outputs.appGatewayFqdn.value]"
         },
         "jumpbox": {
             "type": "string",

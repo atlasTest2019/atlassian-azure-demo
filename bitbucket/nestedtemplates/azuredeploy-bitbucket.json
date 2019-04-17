@@ -51,34 +51,6 @@
                 "description": "Azure region (WestUS, CentralUs, AustraliaEast, etc) shared by all of the resources in the template"
             }
         },
-        "vnetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.0.0/16",
-            "metadata": {
-                "description": "Address space for the Virtual Network created by the template"
-            }
-        },
-        "publicNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.1.0/24",
-            "metadata": {
-                "description": "Address space for the public subnet in the vnet"
-            }
-        },
-        "appgwNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.2.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet with Application Gateways"
-            }
-        },
-        "bbsNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.4.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet where Bitbucket Server nodes are deployed"
-            }
-        },
         "esNetCIDR": {
             "type": "string",
             "defaultValue": "10.0.5.0/24",
@@ -96,20 +68,6 @@
             "type": "string",
             "metadata": {
                 "description": "SSH key to allow access to jumpbox."
-            }
-        },
-        "jumpboxSize": {
-            "type": "string",
-            "defaultValue": "Standard_B1s",
-            "metadata": {
-                "description": "The size of jumpbox VM"
-            }
-        },
-        "jumpboxHostname": {
-            "type": "string",
-            "defaultValue": "jumpbox",
-            "metadata": {
-                "description": "The hostname for jumpbox. Does not affect it's DNS name"
             }
         },
         "bbsSize": {
@@ -337,23 +295,23 @@
             }
         },
         "jumpboxPrivateIpAddress": {
-           "type": "string",
-           "metadata": {
+            "type": "string",
+            "metadata": {
                 "description": "Jumpbox Private IP Address"
             }
         },
         "nfsPrivateIpAddress": {
-           "type": "string",
-           "metadata": {
+            "type": "string",
+            "metadata": {
                 "description": "NFS Private IP Address"
             }
         },
-         "lbFqdn": {
+        "lbFqdn": {
             "type": "string",
             "metadata": {
-                 "description": "LB FQDN"
-             }
-         }
+                "description": "LB FQDN"
+            }
+        }
     },
     "variables": {
         "namespace": "bitbucket",
@@ -364,78 +322,22 @@
             "provider": "2F0AF47A-92C7-413A-9009-C3815BFF7AF6"
         },
         "appGtwyTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-gtwy.json', parameters('_artifactsLocationSasToken')))]",
+        "vmssTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-vmss.json', parameters('_artifactsLocationSasToken')))]",
         "net": {
             "vnet": {
-                "name": "[concat(variables('namespace'), '-vnet')]",
-                "cidr": "[parameters('vnetCIDR')]"
+                "name": "[concat(variables('namespace'), '-vnet')]"
             },
             "nic": {
-                "jumpbox": {
-                    "name": "[concat(variables('namespace'), '-jumpbox-nic')]",
-                    "ipConfig": {
-                        "name": "[concat(variables('namespace'), '-jumpbox-ipconfig')]"
-                    }
-                },
                 "nfs": {
-                    "name": "[concat(variables('namespace'), '-nfs-nic')]",
-                    "ipConfig": {
-                        "name": "[concat(variables('namespace'), '-nfs-ipconfig')]"
-                    }
-                }
-            },
-            "nsg": {
-                "public": {
-                    "name": "[concat(variables('namespace'), '-public-nsg')]"
-                },
-                "appgw": {
-                    "name": "[concat(variables('namespace'), '-appgw-nsg')]"
-                },
-                "bbs": {
-                    "name": "[concat(variables('namespace'), '-bbs-nsg')]"
-                },
-                "rules": {
-                    "denyInbound": {
-                        "name": "denyInbound",
-                        "properties": {
-                            "description": "Deny All",
-                            "protocol": "*",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "*",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Deny",
-                            "direction": "Inbound",
-                            "priority": 1001
-                        }
-                    },
-                    "denyOutbound": {
-                        "name": "denyOutbound",
-                        "properties": {
-                            "description": "Deny All",
-                            "protocol": "*",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "*",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Deny",
-                            "direction": "Outbound",
-                            "priority": 1002
-                        }
-                    }
+                    "name": "[concat(variables('namespace'), '-nfs-nic')]"
                 }
             },
             "subnets": {
-                "public": {
-                    "name": "[concat(variables('namespace'), '-net-public')]",
-                    "cidr": "[parameters('publicNetCIDR')]"
-                },
                 "appgw": {
-                    "name": "[concat(variables('namespace'), '-net-appgw')]",
-                    "cidr": "[parameters('appgwNetCIDR')]"
+                    "name": "[concat(variables('namespace'), '-net-appgw')]"
                 },
                 "bbs": {
-                    "name": "[concat(variables('namespace'), '-net-bbs')]",
-                    "cidr": "[parameters('bbsNetCIDR')]"
+                    "name": "[concat(variables('namespace'), '-net-bbs')]"
                 }
             },
             "appGw": {
@@ -458,16 +360,6 @@
             }
         },
         "vm": {
-            "jumpbox": {
-                "name": "[concat(variables('namespace'), 'jumpbox')]",
-                "size": "[parameters('jumpboxSize')]",
-                "hostname": "[parameters('jumpboxHostname')]",
-                "image": {
-                    "publisher": "Canonical",
-                    "offer": "UbuntuServer",
-                    "sku": "16.04.0-LTS"
-                }
-            },
             "nfs": {
                 "name": "[concat(variables('namespace'), '-nfs')]",
                 "size": "[parameters('nfsVmSize')]",
@@ -551,54 +443,9 @@
                 }
             }
         },
-        "bitbucket": {
-            "license": "[parameters('license')]",
-            "admin": {
-                "username": "[if(equals(parameters('bitbucketAdminUsername'),'ssh'), parameters('adminUsername'), parameters('bitbucketAdminUsername'))]",
-                "password": "[parameters('bitbucketAdminPassword')]",
-                "fullName": "[parameters('bitbucketAdminName')]",
-                "email": "[parameters('bitbucketAdminEmail')]"
-            }
-        },
-        "env": {
-            "SQL": [
-                "[concat('SQL_USER', '=\"', variables('sql').server.user, '\" ')]",
-                "[concat('SQL_PASS', '=\"', variables('sql').server.password, '\" ')]"
-            ],
-            "BBS": [
-                "[concat('BBS_ADMIN', '=\"', variables('bitbucket').admin.username, '\" ')]",
-                "[concat('BBS_PASS', '=\"', variables('bitbucket').admin.password, '\" ')]",
-                "[concat('BBS_NAME', '=\"', variables('bitbucket').admin.fullName, '\" ')]",
-                "[concat('BBS_EMAIL', '=\"', variables('bitbucket').admin.email, '\" ')]",
-                "[concat('BBS_LICENSE', '=\"', variables('bitbucket').license, '\" ')]",
-                "[concat('BBS_HAZELCAST_PORT', '=\"', parameters('bbsHazelcastPort'), '\" ')]",
-                "[concat('BBS_HAZELCAST_CLUSTER_ID', '=\"', parameters('bbsHazelcastTag'), '\" ')]",
-                "[concat('BBS_HAZELCAST_GROUP_NAME', '=\"', resourceGroup().name, '\" ')]",
-                "[concat('BBS_HAZELCAST_SUBSCRIPTION_ID', '=\"', subscription().subscriptionId, '\" ')]",
-                "[concat('BBS_ES_BASE_URL', '=\"http://', variables('elasticsearch').lbIp, ':9200/\" ')]"
-            ]
-        },
-        "data": {
-            "SQL": "[replace(replace(replace(replace(string(variables('env').SQL), '[\"', ''), '\"]', ''), '\",\"', ''), '\\\"', '\"')]",
-            "BBS": "[replace(replace(replace(replace(string(variables('env').BBS), '[\"', ''), '\"]', ''), '\",\"', ''), '\\\"', '\"')]"
-        },
-        "reader-role": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
         "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]"
     },
     "resources": [
-        {
-            "type": "Microsoft.Authorization/roleAssignments",
-            "apiVersion": "2017-05-01",
-            "dependsOn": [
-                "[variables('vm').bbs.name]"
-            ],
-            "name": "[guid(resourceGroup().id)]",
-            "properties": {
-                "roleDefinitionId": "[variables('reader-role')]",
-                "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/', variables('vm').bbs.name),'/providers/Microsoft.ManagedIdentity/Identities/default'),'2015-08-31-PREVIEW').principalId]",
-                "scope": "[resourceGroup().id]"
-            }
-        },
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "apiVersion": "2017-10-01",
@@ -647,12 +494,106 @@
                     },
                     "vnetName": {
                         "value": "[variables('net').vnet.name]"
-                    }             ,
+                    },
                     "appGtwySubnetName": {
                         "value": "[variables('net').subnets.appgw.name]"
                     },
                     "gtwyIpName": {
                         "value": "[variables('gtwyIpName')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "bbsVmssTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[variables('sql').database.name]",
+                "[variables('vm').nfs.name]",
+                "[variables('elasticsearch').name]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vmssTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "_artifactsLocation": {
+                        "value": "[parameters('_artifactsLocation')]"
+                    },
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "azureSqlPassword": {
+                        "value": "[parameters('azureSqlPassword')]"
+                    },
+                    "azureSqlUsername": {
+                        "value": "[parameters('azureSqlUsername')]"
+                    },
+                    "bbsDiskSize": {
+                        "value": "[parameters('bbsDiskSize')]"
+                    },
+                    "bbsDiskStorageType": {
+                        "value": "[parameters('bbsDiskStorageType')]"
+                    },
+                    "bbsHazelcastPort": {
+                        "value": "[parameters('bbsHazelcastPort')]"
+                    },
+                    "bbsHazelcastTag": {
+                        "value": "[parameters('bbsHazelcastTag')]"
+                    },
+                    "bbsNodeCount": {
+                        "value": "[parameters('bbsNodeCount')]"
+                    },
+                    "bbsNodePrefix": {
+                        "value": "[parameters('bbsNodePrefix')]"
+                    },
+                    "bbsSize": {
+                        "value": "[parameters('bbsSize')]"
+                    },
+                    "bitbucketAdminEmail": {
+                        "value": "[parameters('bitbucketAdminEmail')]"
+                    },
+                    "bitbucketAdminName": {
+                        "value": "[parameters('bitbucketAdminName')]"
+                    },
+                    "bitbucketAdminPassword": {
+                        "value": "[parameters('bitbucketAdminPassword')]"
+                    },
+                    "bitbucketAdminUsername": {
+                        "value": "[parameters('bitbucketAdminUsername')]"
+                    },
+                    "license": {
+                        "value": "[parameters('license')]"
+                    },
+                    "repositoryLocation": {
+                        "value": "[parameters('repositoryLocation')]"
+                    },
+                    "scriptsBranch": {
+                        "value": "[parameters('scriptsBranch')]"
+                    },
+                    "sshKey": {
+                        "value": "[parameters('sshKey')]"
+                    },
+                    "nfsPrivateIpAddress": {
+                        "value": "[parameters('nfsPrivateIpAddress')]"
+                    },
+                    "lbFqdn": {
+                        "value": "[parameters('lbFqdn')]"
+                    },
+                    "sqlServerFQDN": {
+                        "value": "[reference(variables('sql').server.name).fullyQualifiedDomainName]"
+                    },
+                    "appGatewayFqdn": {
+                        "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
                     }
                 }
             }
@@ -669,7 +610,7 @@
                 },
                 "parameters": {
                     "_artifactsLocationSasToken": {
-                      "value": "[parameters('_artifactsLocationSasToken')]"
+                        "value": "[parameters('_artifactsLocationSasToken')]"
                     },
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
@@ -832,122 +773,6 @@
                     }
                 }
             ]
-        },
-        {
-            "type": "Microsoft.Compute/virtualMachineScaleSets",
-            "apiVersion": "2018-06-01",
-            "location": "[parameters('location')]",
-            "tags": "[union(variables('tags'),variables('vm').bbs.hazelcastTag)]",
-            "dependsOn": [
-                "[variables('sql').database.name]",
-                "[variables('vm').nfs.name]",
-                "[variables('elasticsearch').name]"
-            ],
-            "name": "[variables('vm').bbs.name]",
-            "sku": {
-                "name": "[variables('vm').bbs.size]",
-                "capacity": "[variables('vm').bbs.count]"
-            },
-            "identity": {
-                "type": "SystemAssigned"
-            },
-            "properties": {
-                "upgradePolicy": {
-                    "mode": "Automatic"
-                },
-                "overprovision": false,
-                "virtualMachineProfile": {
-                    "osProfile": {
-                        "computerNamePrefix": "[variables('vm').bbs.hostname]",
-                        "adminUsername": "[parameters('adminUsername')]",
-                        "linuxConfiguration": {
-                            "disablePasswordAuthentication": true,
-                            "ssh": {
-                                "publicKeys": [
-                                    {
-                                        "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
-                                        "keyData": "[parameters('sshKey')]"
-                                    }
-                                ]
-                            }
-                        }
-                    },
-                    "storageProfile": {
-                        "imageReference": {
-                            "publisher": "[variables('vm').bbs.image.publisher]",
-                            "offer": "[variables('vm').bbs.image.offer]",
-                            "sku": "[variables('vm').bbs.image.sku]",
-                            "version": "latest"
-                        },
-                        "osDisk": {
-                            "createOption": "FromImage"
-                        },
-                        "dataDisks": [
-                            {
-                                "lun": 0,
-                                "diskSizeGB": "[variables('vm').bbs.storage.size]",
-                                "createOption": "Empty",
-                                "caching": "[variables('vm').bbs.storage.caching]",
-                                "managedDisk": {
-                                    "storageAccountType": "[variables('vm').bbs.storage.type]"
-                                }
-                            }
-                        ]
-                    },
-                    "networkProfile": {
-                        "networkInterfaceConfigurations": [
-                            {
-                                "name": "[concat(variables('namespace'), variables('vm').bbs.hostname, '-nic')]",
-                                "properties": {
-                                    "primary": true,
-                                    "ipConfigurations": [
-                                        {
-                                            "name": "[concat(variables('namespace'), variables('vm').bbs.hostname, '-ipconfig')]",
-                                            "properties": {
-                                                "subnet": {
-                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('net').vnet.name), '/subnets/', variables('net').subnets.bbs.name)]"
-                                                },
-                                                "applicationGatewayBackendAddressPools": [
-                                                    {
-                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('net').appGw.name), '/backendAddressPools/', variables('net').appGw.bend)]"
-                                                    }
-                                                ],
-                                                "loadBalancerBackendAddressPools": [
-                                                    {
-                                                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('net').lb.name), '/backendAddressPools/', variables('net').lb.names.bendGit)]"
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ],
-                                    "enableAcceleratedNetworking": true
-                                }
-                            }
-                        ]
-                    }
-                }
-            },
-            "resources": [
-                {
-                    "name": "[concat(variables('vm').bbs.name, '-extension')]",
-                    "type": "extensions",
-                    "location": "[parameters('location')]",
-                    "apiVersion": "2018-06-01",
-                    "dependsOn": [
-                        "[variables('vm').bbs.name]"
-                    ],
-                    "properties": {
-                        "publisher": "Microsoft.Azure.Extensions",
-                        "type": "CustomScript",
-                        "typeHandlerVersion": "2.0",
-                        "autoUpgradeMinorVersion": true,
-                        "settings": {
-                            "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', reference(variables('sql').server.name).fullyQualifiedDomainName, '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', reference(variables('gtwyIpName')).dnsSettings.fqdn, '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
-                        }
-                    }
-                }
-            ]
         }
     ],
     "outputs": {
@@ -966,10 +791,6 @@
         "nfs": {
             "type": "string",
             "value": "[parameters('nfsPrivateIpAddress')]"
-        },
-        "cmd": {
-            "type": "string",
-            "value": "[concat(variables('data').SQL, ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' bash install.sh bbs')]"
         }
     }
 }

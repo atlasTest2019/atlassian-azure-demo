@@ -458,9 +458,6 @@
                     "appGatewaySize": {
                         "value": "[parameters('appGatewaySize')]"
                     },
-                    "appgwNetCIDR": {
-                        "value": "[parameters('appgwNetCIDR')]"
-                    },
                     "azureSqlPassword": {
                         "value": "[parameters('azureSqlPassword')]"
                     },
@@ -484,9 +481,6 @@
                     },
                     "bbsHttpPort": {
                         "value": "[parameters('bbsHttpPort')]"
-                    },
-                    "bbsNetCIDR": {
-                        "value": "[parameters('bbsNetCIDR')]"
                     },
                     "bbsNodeCount": {
                         "value": "[parameters('bbsNodeCount')]"
@@ -527,12 +521,6 @@
                     "esNodeSize": {
                         "value": "[parameters('esNodeSize')]"
                     },
-                    "jumpboxHostname": {
-                        "value": "[parameters('jumpboxHostname')]"
-                    },
-                    "jumpboxSize": {
-                        "value": "[parameters('jumpboxSize')]"
-                    },
                     "license": {
                         "value": "[parameters('license')]"
                     },
@@ -542,9 +530,6 @@
                     "nfsVmSize": {
                         "value": "[parameters('nfsVmSize')]"
                     },
-                    "publicNetCIDR": {
-                        "value": "[parameters('publicNetCIDR')]"
-                    },
                     "repositoryLocation": {
                         "value": "[parameters('repositoryLocation')]"
                     },
@@ -553,9 +538,6 @@
                     },
                     "sshKey": {
                         "value": "[parameters('sshKey')]"
-                    },
-                    "vnetCIDR": {
-                        "value": "[parameters('vnetCIDR')]"
                     },
                     "jumpboxPrivateIpAddress": {
                         "value": "[reference('vpcTemplate').outputs.jumpboxPrivateIpAddress.value]"
@@ -587,10 +569,6 @@
         "nfs": {
             "type": "string",
             "value": "[reference('bitbucketTemplate').outputs.nfs.value]"
-        },
-        "cmd": {
-            "type": "string",
-            "value": "[reference('bitbucketTemplate').outputs.cmd.value]"
         }
     }
 }

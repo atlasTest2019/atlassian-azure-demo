@@ -134,6 +134,18 @@
                 "description": "Internal port that Bitbucket Server uses for Hazelcast communication"
             }
         },
+        "dbType": {
+            "type": "string",
+            "allowedValues": [
+                "sqlserver",
+                "postgres",
+                "mysql"
+            ],
+            "defaultValue": "sqlserver",
+            "metadata": {
+                "description": "The database type."
+            }
+        },
         "azureSqlTier": {
             "type": "string",
             "defaultValue": "P2",
@@ -311,6 +323,29 @@
             "metadata": {
                 "description": "LB FQDN"
             }
+        },
+        "enableAnalytics": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable Azure Operational Insights."
+            }
+        },
+        "workspaceSku": {
+            "type": "string",
+            "defaultValue": "Free",
+            "allowedValues": [
+                "Free",
+                "PerNode",
+                "Standalone",
+                "Standard",
+                "Premium",
+                "Unlimited",
+                "PerGB2018"
+            ],
+            "metadata": {
+                "description": "Workspace SKU Pricing Tier. Options depend upon when Azure Subscription created. If after 2018, use 'PerGB2018' otherwise 'Free'."
+            }
         }
     },
     "variables": {
@@ -325,6 +360,8 @@
         "vmssTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-vmss.json', parameters('_artifactsLocationSasToken')))]",
         "dbTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-db-mssql.json', parameters('_artifactsLocationSasToken')))]",
         "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
+        "workspaceTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-workspace.json', parameters('_artifactsLocationSasToken')))]",
+        "analyticsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-analytics.json', parameters('_artifactsLocationSasToken')))]",
         "net": {
             "vnet": {
                 "name": "[concat(variables('namespace'), '-vnet')]"
@@ -356,37 +393,6 @@
                 }
             }
         },
-        "vm": {
-            "nfs": {
-                "name": "[concat(variables('namespace'), '-nfs')]",
-                "size": "[parameters('nfsVmSize')]",
-                "hostname": "bbsnfs",
-                "image": {
-                    "publisher": "Canonical",
-                    "offer": "UbuntuServer",
-                    "sku": "16.04.0-LTS"
-                }
-            },
-            "bbs": {
-                "name": "[concat(variables('namespace'), 'bbs-nodes')]",
-                "size": "[parameters('bbsSize')]",
-                "count": "[parameters('bbsNodeCount')]",
-                "hostname": "[parameters('bbsNodePrefix')]",
-                "image": {
-                    "publisher": "Canonical",
-                    "offer": "UbuntuServer",
-                    "sku": "16.04.0-LTS"
-                },
-                "hazelcastTag": {
-                    "[parameters('bbsHazelcastTag')]": "[parameters('bbsHazelcastPort')]"
-                },
-                "storage": {
-                    "size": "[parameters('bbsDiskSize')]",
-                    "type": "[parameters('bbsDiskStorageType')]",
-                    "caching": "None"
-                }
-            }
-        },
         "elasticsearch": {
             "dataDiskSize": "[parameters('esDataDiskSize')]",
             "dataNodeCount": "[parameters('esDataNodeCount')]",
@@ -396,9 +402,38 @@
             "templateBaseUrl": "[concat(uri(parameters('_artifactsLocation'), 'elasticsearch/third-party/'), '')]",
             "version": "5.5.1"
         },
+        "workspace": {
+            "name": "[concat(variables('namespace'), '-monitorworkspace-', uniqueString(resourceGroup().id))]",
+            "sku": "[parameters('workspaceSku')]",
+            "retentionInDays": 7
+        },
         "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]"
     },
     "resources": [
+        {
+            "apiVersion": "2018-05-01",
+            "name": "workspaceTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[parameters('enableAnalytics')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('workspaceTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "workspaceName": {
+                        "value": "[variables('workspace').name]"
+                    },
+                    "workspaceSku": {
+                        "value": "[parameters('workspaceSku')]"
+                    }
+                }
+            }
+        },
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "apiVersion": "2017-10-01",
@@ -421,7 +456,8 @@
             "name": "appGtwyTemplate",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "[variables('gtwyIpName')]"
+                "[variables('gtwyIpName')]",
+                "workspaceTemplate"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -461,6 +497,9 @@
             "apiVersion": "2018-05-01",
             "name": "dbTemplate",
             "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "workspaceTemplate"
+            ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -491,6 +530,34 @@
         },
         {
             "apiVersion": "2018-05-01",
+            "name": "analyticsTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[parameters('enableAnalytics')]",
+            "dependsOn": [
+                "workspaceTemplate",
+                "dbTemplate"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('analyticsTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "workspaceName": {
+                        "value": "[variables('workspace').name]"
+                    },
+                    "dbType": {
+                        "value": "[parameters('dbType')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
             "name": "nfsVmTemplate",
             "type": "Microsoft.Resources/deployments",
             "properties": {
@@ -514,6 +581,9 @@
                     },
                     "_artifactsLocationSasToken": {
                         "value": "[parameters('_artifactsLocationSasToken')]"
+                    },
+                    "bitbucketVersion": {
+                        "value": "[parameters('bitbucketVersion')]"
                     },
                     "customDownloadUrl": {
                         "value": "[parameters('customDownloadUrl')]"
@@ -623,6 +693,15 @@
                     },
                     "appGatewayFqdn": {
                         "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
+                    },
+                    "workspaceId": {
+                        "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceId.value, '')]"
+                    },
+                    "workspacePrimaryKey": {
+                        "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspacePrimaryKey.value, '')]"
+                    },
+                    "workspaceSecondaryKey": {
+                        "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceSecondaryKey.value, '')]"
                     }
                 }
             }

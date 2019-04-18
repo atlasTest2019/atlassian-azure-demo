@@ -169,6 +169,24 @@
         },
         "appGatewayFqdn": {
             "type": "string"
+        },
+        "workspaceId": {
+            "type": "string",
+            "metadata": {
+                "description": "The ID of the Azure Operations Management Suite (OMS) workspace."
+            }
+        },
+        "workspacePrimaryKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The primary key of the Azure Operations Management Suite (OMS) workspace."
+            }
+        },
+        "workspaceSecondaryKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The secondary key of the Azure Operations Management Suite (OMS) workspace."
+            }
         }
     },
     "variables": {
@@ -196,15 +214,7 @@
                     "size": "[parameters('bbsDiskSize')]",
                     "type": "[parameters('bbsDiskStorageType')]",
                     "caching": "None"
-                },
-                "scripts": [
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
-                ]
+                }
             }
         },
         "bitbucket": {
@@ -231,7 +241,10 @@
                 "[concat('BBS_HAZELCAST_CLUSTER_ID', '=\"', parameters('bbsHazelcastTag'), '\" ')]",
                 "[concat('BBS_HAZELCAST_GROUP_NAME', '=\"', resourceGroup().name, '\" ')]",
                 "[concat('BBS_HAZELCAST_SUBSCRIPTION_ID', '=\"', subscription().subscriptionId, '\" ')]",
-                "[concat('BBS_ES_BASE_URL', '=\"http://', variables('elasticsearch').lbIp, ':9200/\" ')]"
+                "[concat('BBS_ES_BASE_URL', '=\"http://', variables('elasticsearch').lbIp, ':9200/\" ')]",
+                "[concat('OMS_WORKSPACE_ID', '=\"', parameters('workspaceId'), '\" ')]",
+                "[concat('OMS_PRIMARY_KEY', '=\"', parameters('workspacePrimaryKey'), '\" ')]",
+                "[concat('OMS_SECONDARY_KEY', '=\"', parameters('workspaceSecondaryKey'), '\" ')]"
             ]
         },
         "data": {
@@ -366,8 +379,15 @@
                         "typeHandlerVersion": "2.0",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
-                            "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
+                            "fileUris": [
+                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
+                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
+                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
+                            ],
+                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
                         }
                     }
                 }

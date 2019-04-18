@@ -96,6 +96,24 @@
             "metadata": {
                 "description": "The size of the data disk for Git repositories in GB"
             }
+        },
+        "workspaceId": {
+            "type": "string",
+            "metadata": {
+                "description": "The ID of the Azure Operations Management Suite (OMS) workspace."
+            }
+        },
+        "workspacePrimaryKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The primary key of the Azure Operations Management Suite (OMS) workspace."
+            }
+        },
+        "workspaceSecondaryKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The secondary key of the Azure Operations Management Suite (OMS) workspace."
+            }
         }
     },
     "variables": {
@@ -118,6 +136,18 @@
                     "name": "[concat(variables('namespace'), '-nfs-nic')]"
                 }
             }
+        },
+        "env": {
+            "NFS": [
+                "[concat('BBS_VERSION', '=\"', parameters('bitbucketVersion'), '\" ')]",
+                "[concat('BBS_INSTALLER_DOWNLOAD_URL', '=\"', parameters('customDownloadUrl'), '\" ')]",
+                "[concat('OMS_WORKSPACE_ID', '=\"', parameters('workspaceId'), '\" ')]",
+                "[concat('OMS_PRIMARY_KEY', '=\"', parameters('workspacePrimaryKey'), '\" ')]",
+                "[concat('OMS_SECONDARY_KEY', '=\"', parameters('workspaceSecondaryKey'), '\" ')]"
+            ]
+        },
+        "data": {
+            "NFS": "[replace(replace(replace(replace(string(variables('env').NFS), '[\"', ''), '\"]', ''), '\",\"', ''), '\\\"', '\"')]"
         }
     },
     "resources": [
@@ -198,7 +228,7 @@
                                 "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
                                 "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
                             ],
-                            "commandToExecute": "[concat('BBS_VERSION=\"', parameters('bitbucketVersion'), '\" ', 'BBS_INSTALLER_DOWNLOAD_URL=\"', parameters('customDownloadUrl'), '\" ', ' bash install.sh nfs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
+                            "commandToExecute": "[concat(variables('data').NFS, ' bash install.sh nfs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
                         }
                     }
                 }

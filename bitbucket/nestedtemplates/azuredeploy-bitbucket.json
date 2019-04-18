@@ -599,6 +599,15 @@
                     },
                     "nfsDiskSize": {
                         "value": "[parameters('nfsDiskSize')]"
+                    },
+                    "workspaceId": {
+                        "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceId.value, '')]"
+                    },
+                    "workspacePrimaryKey": {
+                        "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspacePrimaryKey.value, '')]"
+                    },
+                    "workspaceSecondaryKey": {
+                        "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceSecondaryKey.value, '')]"
                     }
                 }
             }

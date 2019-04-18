@@ -51,34 +51,6 @@
                 "description": "Azure region (WestUS, CentralUs, AustraliaEast, etc) shared by all of the resources in the template"
             }
         },
-        "vnetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.0.0/16",
-            "metadata": {
-                "description": "Address space for the Virtual Network created by the template"
-            }
-        },
-        "publicNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.1.0/24",
-            "metadata": {
-                "description": "Address space for the public subnet in the vnet"
-            }
-        },
-        "appgwNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.2.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet with Application Gateways"
-            }
-        },
-        "bbsNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.4.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet where Bitbucket Server nodes are deployed"
-            }
-        },
         "esNetCIDR": {
             "type": "string",
             "defaultValue": "10.0.5.0/24",
@@ -96,20 +68,6 @@
             "type": "string",
             "metadata": {
                 "description": "SSH key to allow access to jumpbox."
-            }
-        },
-        "jumpboxSize": {
-            "type": "string",
-            "defaultValue": "Standard_B1s",
-            "metadata": {
-                "description": "The size of jumpbox VM"
-            }
-        },
-        "jumpboxHostname": {
-            "type": "string",
-            "defaultValue": "jumpbox",
-            "metadata": {
-                "description": "The hostname for jumpbox. Does not affect it's DNS name"
             }
         },
         "bbsSize": {
@@ -273,21 +231,6 @@
                 "description": "Amount of Application Gateway instances to created"
             }
         },
-        "httpGatewaySize": {
-            "type": "string",
-            "allowedValues": [
-                "Standard_D2s_v3",
-                "Standard_D4s_v3",
-                "Standard_D8s_v3",
-                "Standard_D16s_v3",
-                "Standard_D32s_v3",
-                "Standard_D64s_v3"
-            ],
-            "defaultValue": "Standard_D2s_v3",
-            "metadata": {
-                "description": "VM type which used for forwarding HTTP traffic from Load Balancer to Application Gateway"
-            }
-        },
         "license": {
             "type": "securestring",
             "defaultValue": "AAABpg0ODAoPeNp1kUtP20AUhff+FVfqLtI4DkkgRLLUYA+UqtiR7SzawmLiXPBQe8aaR9r013ewDYG2LGZzH2fO+e6HorKQyD0ECwhmy/lsOZ3D1U0BJ8Fk4SW22aJK7zcalQ7JxIukMKw0CWswfDSVbJj+yEzNtOZM+KVsPG2YrvwvvEShsTi02M3mxSoraPZv96WztqqsmMaYGQyfPieTCQkW3ntKQ53+ark6dEvr6fT007NDesN4/Y7FHNUe1XUcXtAzSmbxtxNymn4+I1fT88Xg0AmyCIVBFRpl0cvtVpeKt4ZL0VdGo1GSFuQyzcg6S+NNVFynCdnk1DXCSKFztIPtAUyFMHgFKkq5QwWtko9YGvheGdPeLsfjB+m/sTiu+w2C/cadD7EEIQ3suDaKb61Bp8w1GAml1UY27kC+50I7z4KJ8jUYR/N8oNmnc3z4Hl9yRBldFTQmF1+fvP+f2RDBQduIH0L+FF5Ok9A9Mg8CL1UPTHDNOjyr31YhxNjW8tA4hl5Hw3X+Pm2MR6Z0z2rbTcGQHe6lgl5rd9Q6zvX2/wDFKfAUMCsCFH8cSCeQYWgwBdkxpTeUqGiTfg2qAhNxOHcjUrs7UMuuXFQw4T4+mxFqX02k8",
@@ -324,7 +267,7 @@
         },
         "esDataNodeCount": {
             "type": "int",
-            "defaultValue": 2,
+            "defaultValue": 1,
             "metadata": {
                 "description": "The number of elasticsearch data nodes to be deployed."
             }
@@ -350,90 +293,259 @@
             "metadata": {
                 "description": "The size of Elasticsearch nodes VM."
             }
+        },
+        "jumpboxPrivateIpAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "Jumpbox Private IP Address"
+            }
+        },
+        "nfsPrivateIpAddress": {
+            "type": "string",
+            "metadata": {
+                "description": "NFS Private IP Address"
+            }
+        },
+        "lbFqdn": {
+            "type": "string",
+            "metadata": {
+                "description": "LB FQDN"
+            }
         }
     },
     "variables": {
-        "vpcTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-vpc.json', parameters('_artifactsLocationSasToken')))]",
-        "bitbucketTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket.json', parameters('_artifactsLocationSasToken')))]"
-    },
-    "resources": [
-        {
-            "apiVersion": "2018-05-01",
-            "name": "pid-49ff88fd-5e3c-58f7-aadf-6a73ac08ea91",
-            "type": "Microsoft.Resources/deployments",
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": []
+        "namespace": "bitbucket",
+        "suffix": "[uniqueString(resourceGroup().id)]",
+        "tags": {
+            "vendor": "Atlassian",
+            "product": "Bitbucket Server",
+            "provider": "2F0AF47A-92C7-413A-9009-C3815BFF7AF6"
+        },
+        "appGtwyTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-gtwy.json', parameters('_artifactsLocationSasToken')))]",
+        "vmssTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-vmss.json', parameters('_artifactsLocationSasToken')))]",
+        "dbTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-db-mssql.json', parameters('_artifactsLocationSasToken')))]",
+        "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
+        "net": {
+            "vnet": {
+                "name": "[concat(variables('namespace'), '-vnet')]"
+            },
+            "subnets": {
+                "appgw": {
+                    "name": "[concat(variables('namespace'), '-net-appgw')]"
+                },
+                "bbs": {
+                    "name": "[concat(variables('namespace'), '-net-bbs')]"
+                }
+            },
+            "appGw": {
+                "name": "[concat(variables('namespace'), '-app-gw')]",
+                "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]"
+            },
+            "lb": {
+                "name": "[concat(variables('namespace'), '-lb')]",
+                "dns": "[concat(variables('namespace'), '-ssh-', variables('suffix'))]",
+                "names": {
+                    "publicIP": "[concat(variables('namespace'), '-lb', '-public-ip')]",
+                    "fendIpConfig": "[concat(variables('namespace'), '-lb', '-fend-ipconfig')]",
+                    "bendGit": "[concat(variables('namespace'), '-lb', '-bend-git')]",
+                    "bendSsh": "[concat(variables('namespace'), '-lb', '-bend-ssh')]",
+                    "bendHttp": "[concat(variables('namespace'), '-lb', '-bend-http')]",
+                    "ruleGit": "[concat(variables('namespace'), '-lb', '-rule-git')]",
+                    "ruleSsh": "[concat(variables('namespace'), '-lb', '-rule-ssh')]",
+                    "ruleHttp": "[concat(variables('namespace'), '-lb', '-rule-http')]"
                 }
             }
         },
+        "vm": {
+            "nfs": {
+                "name": "[concat(variables('namespace'), '-nfs')]",
+                "size": "[parameters('nfsVmSize')]",
+                "hostname": "bbsnfs",
+                "image": {
+                    "publisher": "Canonical",
+                    "offer": "UbuntuServer",
+                    "sku": "16.04.0-LTS"
+                }
+            },
+            "bbs": {
+                "name": "[concat(variables('namespace'), 'bbs-nodes')]",
+                "size": "[parameters('bbsSize')]",
+                "count": "[parameters('bbsNodeCount')]",
+                "hostname": "[parameters('bbsNodePrefix')]",
+                "image": {
+                    "publisher": "Canonical",
+                    "offer": "UbuntuServer",
+                    "sku": "16.04.0-LTS"
+                },
+                "hazelcastTag": {
+                    "[parameters('bbsHazelcastTag')]": "[parameters('bbsHazelcastPort')]"
+                },
+                "storage": {
+                    "size": "[parameters('bbsDiskSize')]",
+                    "type": "[parameters('bbsDiskStorageType')]",
+                    "caching": "None"
+                }
+            }
+        },
+        "elasticsearch": {
+            "dataDiskSize": "[parameters('esDataDiskSize')]",
+            "dataNodeCount": "[parameters('esDataNodeCount')]",
+            "dataVmSize": "[parameters('esNodeSize')]",
+            "lbIp": "10.0.5.99",
+            "name": "[concat(variables('namespace'), '-elasticsearch')]",
+            "templateBaseUrl": "[concat(uri(parameters('_artifactsLocation'), 'elasticsearch/third-party/'), '')]",
+            "version": "5.5.1"
+        },
+        "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
         {
-            "type": "Microsoft.Resources/deployments",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2017-10-01",
+            "name": "[variables('gtwyIpName')]",
+            "location": "[parameters('location')]",
+            "tags": "[variables('tags')]",
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('gtwyIpName')]"
+                },
+                "idleTimeoutInMinutes": 30
+            }
+        },
+        {
             "apiVersion": "2018-05-01",
-            "name": "vpcTemplate",
+            "name": "appGtwyTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[variables('gtwyIpName')]"
+            ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[variables('vpcTemplateUri')]",
+                    "uri": "[variables('appGtwyTemplateUri')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
                     "location": {
                         "value": "[parameters('location')]"
                     },
-                    "adminUsername": {
-                        "value": "[parameters('adminUsername')]"
+                    "appGatewayCapacity": {
+                        "value": "[parameters('appGatewayCapacity')]"
                     },
-                    "appgwNetCIDR": {
-                        "value": "[parameters('appgwNetCIDR')]"
+                    "appGatewayProbeInterval": {
+                        "value": "[parameters('appGatewayProbeInterval')]"
                     },
-                    "bbsHazelcastPort": {
-                        "value": "[parameters('bbsHazelcastPort')]"
+                    "appGatewaySize": {
+                        "value": "[parameters('appGatewaySize')]"
                     },
                     "bbsHttpPort": {
                         "value": "[parameters('bbsHttpPort')]"
                     },
-                    "bbsNetCIDR": {
-                        "value": "[parameters('bbsNetCIDR')]"
+                    "vnetName": {
+                        "value": "[variables('net').vnet.name]"
                     },
-                    "httpGatewaySize": {
-                        "value": "[parameters('httpGatewaySize')]"
+                    "appGtwySubnetName": {
+                        "value": "[variables('net').subnets.appgw.name]"
                     },
-                    "jumpboxHostname": {
-                        "value": "[parameters('jumpboxHostname')]"
-                    },
-                    "jumpboxSize": {
-                        "value": "[parameters('jumpboxSize')]"
-                    },
-                    "nfsVmSize": {
-                        "value": "[parameters('nfsVmSize')]"
-                    },
-                    "publicNetCIDR": {
-                        "value": "[parameters('publicNetCIDR')]"
-                    },
-                    "sshKey": {
-                        "value": "[parameters('sshKey')]"
-                    },
-                    "vnetCIDR": {
-                        "value": "[parameters('vnetCIDR')]"
-                    }                    
+                    "gtwyIpName": {
+                        "value": "[variables('gtwyIpName')]"
+                    }
                 }
             }
         },
         {
-            "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-05-01",
-            "name": "bitbucketTemplate",
+            "name": "dbTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('dbTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "azureSqlTier": {
+                        "value": "[parameters('azureSqlTier')]"
+                    },
+                    "azureSqlPassword": {
+                        "value": "[parameters('azureSqlPassword')]"
+                    },
+                    "azureSqlUsername": {
+                        "value": "[parameters('azureSqlUsername')]"
+                    },
+                    "vnetName": {
+                        "value": "[variables('net').vnet.name]"
+                    },
+                    "bbsSubnetName": {
+                        "value": "[variables('net').subnets.bbs.name]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "nfsVmTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('nfsVmTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "repositoryLocation": {
+                        "value": "[parameters('repositoryLocation')]"
+                    },
+                    "scriptsBranch": {
+                        "value": "[parameters('scriptsBranch')]"
+                    },
+                    "_artifactsLocation": {
+                        "value": "[parameters('_artifactsLocation')]"
+                    },
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    },
+                    "customDownloadUrl": {
+                        "value": "[parameters('customDownloadUrl')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "sshKey": {
+                        "value": "[parameters('sshKey')]"
+                    },
+                    "nfsVmSize": {
+                        "value": "[parameters('nfsVmSize')]"
+                    },
+                    "nfsDiskSize": {
+                        "value": "[parameters('nfsDiskSize')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "bbsVmssTemplate",
+            "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "vpcTemplate"
+                "dbTemplate",
+                "nfsVmTemplate",
+                "[variables('elasticsearch').name]"
             ],
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[variables('bitbucketTemplateUri')]",
+                    "uri": "[variables('vmssTemplateUri')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -449,20 +561,8 @@
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
                     },
-                    "appGatewayCapacity": {
-                        "value": "[parameters('appGatewayCapacity')]"
-                    },
-                    "appGatewayProbeInterval": {
-                        "value": "[parameters('appGatewayProbeInterval')]"
-                    },
-                    "appGatewaySize": {
-                        "value": "[parameters('appGatewaySize')]"
-                    },
                     "azureSqlPassword": {
                         "value": "[parameters('azureSqlPassword')]"
-                    },
-                    "azureSqlTier": {
-                        "value": "[parameters('azureSqlTier')]"
                     },
                     "azureSqlUsername": {
                         "value": "[parameters('azureSqlUsername')]"
@@ -478,9 +578,6 @@
                     },
                     "bbsHazelcastTag": {
                         "value": "[parameters('bbsHazelcastTag')]"
-                    },
-                    "bbsHttpPort": {
-                        "value": "[parameters('bbsHttpPort')]"
                     },
                     "bbsNodeCount": {
                         "value": "[parameters('bbsNodeCount')]"
@@ -503,32 +600,8 @@
                     "bitbucketAdminUsername": {
                         "value": "[parameters('bitbucketAdminUsername')]"
                     },
-                    "bitbucketVersion": {
-                        "value": "[parameters('bitbucketVersion')]"
-                    },
-                    "customDownloadUrl": {
-                        "value": "[parameters('customDownloadUrl')]"
-                    },
-                    "esDataDiskSize": {
-                        "value": "[parameters('esDataDiskSize')]"
-                    },
-                    "esDataNodeCount": {
-                        "value": "[parameters('esDataNodeCount')]"
-                    },
-                    "esNetCIDR": {
-                        "value": "[parameters('esNetCIDR')]"
-                    },
-                    "esNodeSize": {
-                        "value": "[parameters('esNodeSize')]"
-                    },
                     "license": {
                         "value": "[parameters('license')]"
-                    },
-                    "nfsDiskSize": {
-                        "value": "[parameters('nfsDiskSize')]"
-                    },
-                    "nfsVmSize": {
-                        "value": "[parameters('nfsVmSize')]"
                     },
                     "repositoryLocation": {
                         "value": "[parameters('repositoryLocation')]"
@@ -539,36 +612,101 @@
                     "sshKey": {
                         "value": "[parameters('sshKey')]"
                     },
-                    "jumpboxPrivateIpAddress": {
-                        "value": "[reference('vpcTemplate').outputs.jumpboxPrivateIpAddress.value]"
-                    },
                     "nfsPrivateIpAddress": {
-                        "value": "[reference('vpcTemplate').outputs.nfsPrivateIpAddress.value]"
+                        "value": "[parameters('nfsPrivateIpAddress')]"
                     },
                     "lbFqdn": {
-                        "value": "[reference('vpcTemplate').outputs.lbFqdn.value]"
+                        "value": "[parameters('lbFqdn')]"
+                    },
+                    "sqlServerFqdn": {
+                        "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
+                    },
+                    "appGatewayFqdn": {
+                        "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
                     }
-
+                }
+            }
+        },
+        {
+            "name": "[variables('elasticsearch').name]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[uri(parameters('_artifactsLocation'), concat('elasticsearch/elasticsearch.json', parameters('_artifactsLocationSasToken')))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "dataNodeCount": {
+                        "value": "[variables('elasticsearch').dataNodeCount]"
+                    },
+                    "dataDiskSize": {
+                        "value": "[variables('elasticsearch').dataDiskSize]"
+                    },
+                    "esTemplateBaseUrl": {
+                        "value": "[variables('elasticsearch').templateBaseUrl]"
+                    },
+                    "jumpboxIp": {
+                        "value": "[parameters('jumpboxPrivateIpAddress')]"
+                    },
+                    "lbIp": {
+                        "value": "[variables('elasticsearch').lbIp]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "namespace": {
+                        "value": "[variables('elasticsearch').name]"
+                    },
+                    "netCIDR": {
+                        "value": "[parameters('esNetCIDR')]"
+                    },
+                    "sshKey": {
+                        "value": "[parameters('sshKey')]"
+                    },
+                    "tags": {
+                        "value": "[variables('tags')]"
+                    },
+                    "version": {
+                        "value": "[variables('elasticsearch').version]"
+                    },
+                    "vmSizeDataNodes": {
+                        "value": "[variables('elasticsearch').dataVmSize]"
+                    },
+                    "vnetName": {
+                        "value": "[variables('net').vnet.name]"
+                    }
                 }
             }
         }
     ],
     "outputs": {
-        "ssh": {
-            "type": "string",
-            "value": "[concat('ssh ', parameters('adminUsername'), '@', reference('vpcTemplate').outputs.ssh.value)]"
-        },
         "appGatewayFqdn": {
             "type": "string",
-            "value": "[reference('bitbucketTemplate').outputs.appGatewayFqdn.value]"
+            "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
+        },
+        "ssh": {
+            "type": "string",
+            "value": "[concat('ssh ', parameters('adminUsername'), '@', parameters('lbFqdn'))]"
         },
         "jumpbox": {
             "type": "string",
-            "value": "[reference('vpcTemplate').outputs.lbFqdn.value]"
+            "value": "[parameters('lbFqdn')]"
         },
         "nfs": {
             "type": "string",
-            "value": "[reference('bitbucketTemplate').outputs.nfs.value]"
+            "value": "[parameters('nfsPrivateIpAddress')]"
+        },
+        "sqlServerFqdn": {
+            "type": "string",
+            "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
         }
     }
 }

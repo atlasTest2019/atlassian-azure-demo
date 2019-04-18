@@ -1,6 +1,7 @@
 node_modules
 .group
 .idea
+*.iml
 .location
 .prefix
 .product

@@ -1,0 +1,141 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Azure region (WestUS, CentralUs, AustraliaEast, etc) shared by all of the resources in the template"
+            }
+        },
+        "azureSqlTier": {
+            "type": "string",
+            "defaultValue": "P2",
+            "allowedValues": [
+                "Basic",
+                "S0",
+                "S1",
+                "S2",
+                "S3",
+                "S4",
+                "S6",
+                "S7",
+                "S9",
+                "S12",
+                "P1",
+                "P2",
+                "P4",
+                "P6",
+                "P11",
+                "P15"
+            ],
+            "metadata": {
+                "description": "Database Tier for Azure SQL DTU pricing model"
+            }
+        },
+        "azureSqlUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Username to access Bitbucket Server database."
+            }
+        },
+        "azureSqlPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password to access Bitbucket Server database."
+            }
+        },
+        "vnetName": {
+            "type": "string"
+        },
+        "bbsSubnetName": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "namespace": "bitbucket",
+        "sql": {
+            "server": {
+                "name": "[concat(variables('namespace'), '-sql-server-', uniqueString(resourceGroup().id))]",
+                "user": "[parameters('azureSqlUsername')]",
+                "password": "[parameters('azureSqlPassword')]"
+            },
+            "database": {
+                "name": "[concat(variables('namespace'), '-db')]",
+                "edition": "[variables('lookup').sql.tierToEdition[parameters('azureSqlTier')]]"
+            },
+            "endpoint": {
+                "name": "[concat(variables('namespace'), '-endpoint')]"
+            }
+        },
+        "lookup": {
+            "sql": {
+                "tierToEdition": {
+                    "Basic": "Basic",
+                    "S0": "Standard",
+                    "S1": "Standard",
+                    "S2": "Standard",
+                    "S3": "Standard",
+                    "S4": "Standard",
+                    "S6": "Standard",
+                    "S7": "Standard",
+                    "S9": "Standard",
+                    "S12": "Standard",
+                    "P1": "Premium",
+                    "P2": "Premium",
+                    "P4": "Premium",
+                    "P6": "Premium",
+                    "P11": "Premium",
+                    "P15": "Premium"
+                }
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2015-05-01-preview",
+            "location": "[parameters('location')]",
+            "name": "[variables('sql').server.name]",
+            "properties": {
+                "administratorLogin": "[variables('sql').server.user]",
+                "administratorLoginPassword": "[variables('sql').server.password]"
+            },
+            "resources": [
+                {
+                    "type": "databases",
+                    "apiVersion": "2014-04-01",
+                    "name": "[variables('sql').database.name]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('sql').server.name]"
+                    ],
+                    "properties": {
+                        "edition": "[variables('sql').database.edition]",
+                        "requestedServiceObjectiveName": "[parameters('azureSqlTier')]",
+                        "collation": "SQL_Latin1_General_CP1_CS_AS"
+                    }
+                },
+                {
+                    "type": "virtualNetworkRules",
+                    "apiVersion": "2015-05-01-preview",
+                    "name": "[variables('sql').endpoint.name]",
+                    "dependsOn": [
+                        "[variables('sql').server.name]"
+                    ],
+                    "properties": {
+                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('bbsSubnetName'))]",
+                        "ignoreMissingVnetServiceEndpoint": false
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+        "sqlServerFqdn": {
+            "type": "string",
+            "value": "[reference(variables('sql').server.name).fullyQualifiedDomainName]"
+        }
+    }
+}

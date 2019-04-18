@@ -1,9 +1,27 @@
 {
-    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-        "applicationTitle": {
-            "value": "Atlassian Bitbucket Server"
+        "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {
+                "_artifactsLocation": {
+                        "value": "https://bitbucket.org/atlassian/atlassian-azure-deployment/raw/master/bitbucket/"
+                },
+                "_artifactsLocationSasToken": {
+                        "value": ""
+                },
+                "adminUsername": {
+                        "value": "bbadmin"
+                },
+                "azureSqlUsername": {
+                        "value": "bbsqluser"
+                },
+                "azureSqlPassword": {
+                        "value": "P@55w0rd"
+                },
+                "bitbucketAdminPassword": {
+                        "value": "admin"
+                },
+                "bbsNodeCount": {
+                        "value": 2
+                }
         }
-    }
 }

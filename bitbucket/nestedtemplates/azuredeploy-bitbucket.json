@@ -323,14 +323,11 @@
         },
         "appGtwyTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-gtwy.json', parameters('_artifactsLocationSasToken')))]",
         "vmssTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-vmss.json', parameters('_artifactsLocationSasToken')))]",
+        "dbTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-db-mssql.json', parameters('_artifactsLocationSasToken')))]",
+        "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
         "net": {
             "vnet": {
                 "name": "[concat(variables('namespace'), '-vnet')]"
-            },
-            "nic": {
-                "nfs": {
-                    "name": "[concat(variables('namespace'), '-nfs-nic')]"
-                }
             },
             "subnets": {
                 "appgw": {
@@ -387,15 +384,7 @@
                     "size": "[parameters('bbsDiskSize')]",
                     "type": "[parameters('bbsDiskStorageType')]",
                     "caching": "None"
-                },
-                "scripts": [
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                    "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
-                ]
+                }
             }
         },
         "elasticsearch": {
@@ -406,42 +395,6 @@
             "name": "[concat(variables('namespace'), '-elasticsearch')]",
             "templateBaseUrl": "[concat(uri(parameters('_artifactsLocation'), 'elasticsearch/third-party/'), '')]",
             "version": "5.5.1"
-        },
-        "sql": {
-            "server": {
-                "name": "[concat(variables('namespace'), '-sql-server-', uniqueString(resourceGroup().id))]",
-                "user": "[parameters('azureSqlUsername')]",
-                "password": "[parameters('azureSqlPassword')]"
-            },
-            "database": {
-                "name": "[concat(variables('namespace'), '-db')]",
-                "edition": "[variables('lookup').sql.tierToEdition[parameters('azureSqlTier')]]"
-            },
-            "endpoint": {
-                "name": "[concat(variables('namespace'), '-endpoint')]"
-            }
-        },
-        "lookup": {
-            "sql": {
-                "tierToEdition": {
-                    "Basic": "Basic",
-                    "S0": "Standard",
-                    "S1": "Standard",
-                    "S2": "Standard",
-                    "S3": "Standard",
-                    "S4": "Standard",
-                    "S6": "Standard",
-                    "S7": "Standard",
-                    "S9": "Standard",
-                    "S12": "Standard",
-                    "P1": "Premium",
-                    "P2": "Premium",
-                    "P4": "Premium",
-                    "P6": "Premium",
-                    "P11": "Premium",
-                    "P15": "Premium"
-                }
-            }
         },
         "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]"
     },
@@ -506,11 +459,87 @@
         },
         {
             "apiVersion": "2018-05-01",
+            "name": "dbTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('dbTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "azureSqlTier": {
+                        "value": "[parameters('azureSqlTier')]"
+                    },
+                    "azureSqlPassword": {
+                        "value": "[parameters('azureSqlPassword')]"
+                    },
+                    "azureSqlUsername": {
+                        "value": "[parameters('azureSqlUsername')]"
+                    },
+                    "vnetName": {
+                        "value": "[variables('net').vnet.name]"
+                    },
+                    "bbsSubnetName": {
+                        "value": "[variables('net').subnets.bbs.name]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "nfsVmTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('nfsVmTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "repositoryLocation": {
+                        "value": "[parameters('repositoryLocation')]"
+                    },
+                    "scriptsBranch": {
+                        "value": "[parameters('scriptsBranch')]"
+                    },
+                    "_artifactsLocation": {
+                        "value": "[parameters('_artifactsLocation')]"
+                    },
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    },
+                    "customDownloadUrl": {
+                        "value": "[parameters('customDownloadUrl')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "sshKey": {
+                        "value": "[parameters('sshKey')]"
+                    },
+                    "nfsVmSize": {
+                        "value": "[parameters('nfsVmSize')]"
+                    },
+                    "nfsDiskSize": {
+                        "value": "[parameters('nfsDiskSize')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
             "name": "bbsVmssTemplate",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
-                "[variables('sql').database.name]",
-                "[variables('vm').nfs.name]",
+                "dbTemplate",
+                "nfsVmTemplate",
                 "[variables('elasticsearch').name]"
             ],
             "properties": {
@@ -589,8 +618,8 @@
                     "lbFqdn": {
                         "value": "[parameters('lbFqdn')]"
                     },
-                    "sqlServerFQDN": {
-                        "value": "[reference(variables('sql').server.name).fullyQualifiedDomainName]"
+                    "sqlServerFqdn": {
+                        "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
                     },
                     "appGatewayFqdn": {
                         "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
@@ -656,123 +685,6 @@
                     }
                 }
             }
-        },
-        {
-            "type": "Microsoft.Sql/servers",
-            "apiVersion": "2015-05-01-preview",
-            "location": "[parameters('location')]",
-            "tags": "[variables('tags')]",
-            "name": "[variables('sql').server.name]",
-            "properties": {
-                "administratorLogin": "[variables('sql').server.user]",
-                "administratorLoginPassword": "[variables('sql').server.password]"
-            },
-            "resources": [
-                {
-                    "type": "databases",
-                    "apiVersion": "2014-04-01",
-                    "name": "[variables('sql').database.name]",
-                    "location": "[parameters('location')]",
-                    "tags": "[variables('tags')]",
-                    "dependsOn": [
-                        "[variables('sql').server.name]"
-                    ],
-                    "properties": {
-                        "edition": "[variables('sql').database.edition]",
-                        "requestedServiceObjectiveName": "[parameters('azureSqlTier')]",
-                        "collation": "SQL_Latin1_General_CP1_CS_AS"
-                    }
-                },
-                {
-                    "type": "virtualNetworkRules",
-                    "apiVersion": "2015-05-01-preview",
-                    "name": "[variables('sql').endpoint.name]",
-                    "dependsOn": [
-                        "[variables('sql').server.name]"
-                    ],
-                    "properties": {
-                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('net').vnet.name, variables('net').subnets.bbs.name)]",
-                        "ignoreMissingVnetServiceEndpoint": false
-                    }
-                }
-            ]
-        },
-        {
-            "type": "Microsoft.Compute/virtualMachines",
-            "apiVersion": "2018-06-01",
-            "location": "[parameters('location')]",
-            "tags": "[variables('tags')]",
-            "name": "[variables('vm').nfs.name]",
-            "properties": {
-                "hardwareProfile": {
-                    "vmSize": "[variables('vm').nfs.size]"
-                },
-                "osProfile": {
-                    "computerName": "[variables('vm').nfs.hostname]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "linuxConfiguration": {
-                        "disablePasswordAuthentication": true,
-                        "ssh": {
-                            "publicKeys": [
-                                {
-                                    "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
-                                    "keyData": "[parameters('sshKey')]"
-                                }
-                            ]
-                        }
-                    }
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "[variables('vm').nfs.image.publisher]",
-                        "offer": "[variables('vm').nfs.image.offer]",
-                        "sku": "[variables('vm').nfs.image.sku]",
-                        "version": "latest"
-                    },
-                    "osDisk": {
-                        "createOption": "FromImage"
-                    },
-                    "dataDisks": [
-                        {
-                            "lun": 0,
-                            "diskSizeGB": "[parameters('nfsDiskSize')]",
-                            "createOption": "Empty",
-                            "caching": "None",
-                            "managedDisk": {
-                                "storageAccountType": "Premium_LRS"
-                            }
-                        }
-                    ]
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('net').nic.nfs.name)]"
-                        }
-                    ]
-                }
-            },
-            "resources": [
-                {
-                    "type": "extensions",
-                    "apiVersion": "2018-06-01",
-                    "location": "[parameters('location')]",
-                    "dependsOn": [
-                        "[variables('vm').nfs.name]"
-                    ],
-                    "name": "script",
-                    "properties": {
-                        "publisher": "Microsoft.Azure.Extensions",
-                        "type": "CustomScript",
-                        "typeHandlerVersion": "2.0",
-                        "autoUpgradeMinorVersion": true,
-                        "settings": {
-                            "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "[concat('BBS_VERSION=\"', parameters('bitbucketVersion'), '\" ', 'BBS_INSTALLER_DOWNLOAD_URL=\"', parameters('customDownloadUrl'), '\" ', ' bash install.sh nfs')]"
-                        }
-                    }
-                }
-            ]
         }
     ],
     "outputs": {
@@ -791,6 +703,10 @@
         "nfs": {
             "type": "string",
             "value": "[parameters('nfsPrivateIpAddress')]"
+        },
+        "sqlServerFqdn": {
+            "type": "string",
+            "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
         }
     }
 }

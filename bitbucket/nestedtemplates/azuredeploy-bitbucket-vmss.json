@@ -164,7 +164,7 @@
                 "description": "LB FQDN"
             }
         },
-        "sqlServerFQDN": {
+        "sqlServerFqdn": {
             "type": "string"
         },
         "appGatewayFqdn": {
@@ -367,7 +367,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": "[variables('vm').bbs.scripts]",
-                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFQDN'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
+                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
                         }
                     }
                 }
@@ -390,7 +390,7 @@
     "outputs": {
         "cmd": {
             "type": "string",
-            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFQDN'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
+            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
         }
     }
 }

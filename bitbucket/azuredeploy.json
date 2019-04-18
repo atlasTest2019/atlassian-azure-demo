@@ -176,6 +176,18 @@
                 "description": "Internal port that Bitbucket Server uses for Hazelcast communication"
             }
         },
+        "dbType": {
+            "type": "string",
+            "allowedValues": [
+                "sqlserver",
+                "postgres",
+                "mysql"
+            ],
+            "defaultValue": "sqlserver",
+            "metadata": {
+                "description": "The database type."
+            }
+        },
         "azureSqlTier": {
             "type": "string",
             "defaultValue": "P2",
@@ -350,6 +362,29 @@
             "metadata": {
                 "description": "The size of Elasticsearch nodes VM."
             }
+        },
+        "enableAnalytics": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable Azure Operational Insights."
+            }
+        },
+        "workspaceSku": {
+            "type": "string",
+            "defaultValue": "Free",
+            "allowedValues": [
+                "Free",
+                "PerNode",
+                "Standalone",
+                "Standard",
+                "Premium",
+                "Unlimited",
+                "PerGB2018"
+            ],
+            "metadata": {
+                "description": "Workspace SKU Pricing Tier. Options depend upon when Azure Subscription created. If after 2018, use 'PerGB2018' otherwise 'Free'."
+            }
         }
     },
     "variables": {
@@ -458,6 +493,9 @@
                     "appGatewaySize": {
                         "value": "[parameters('appGatewaySize')]"
                     },
+                    "dbType": {
+                        "value": "[parameters('dbType')]"
+                    },
                     "azureSqlPassword": {
                         "value": "[parameters('azureSqlPassword')]"
                     },
@@ -547,6 +585,12 @@
                     },
                     "lbFqdn": {
                         "value": "[reference('vpcTemplate').outputs.lbFqdn.value]"
+                    },
+                    "enableAnalytics": {
+                        "value": "[parameters('enableAnalytics')]"
+                    },
+                    "workspaceSku": {
+                        "value": "[parameters('workspaceSku')]"
                     }
 
                 }

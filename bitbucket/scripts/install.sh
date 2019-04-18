@@ -441,6 +441,15 @@ EOT
     log "Done generating 'bitbucket.properties' configuration file"
 }
 
+function install_oms_linux_agent {
+  atl_log install_oms_linx_agent "Have OMS Workspace Key? |${OMS_WORKSPACE_ID}|"
+  if [[ -n ${OMS_WORKSPACE_ID} ]]; then
+    atl_log install_oms_linx_agent  "Installing OMS Linux Agent with workspace id: ${OMS_WORKSPACE_ID} and primary key: ${OMS_PRIMARY_KEY}"
+    wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w "${OMS_WORKSPACE_ID}" -s "${OMS_PRIMARY_KEY}" -d opinsights.azure.com
+    atl_log install_oms_linx_agent  "Finished installing OMS Linux Agent!"
+  fi
+}
+
 function bbs_configure {
     log "Configuring Bitbucket Server application"
 
@@ -470,6 +479,7 @@ function install_nfs {
     log "Configuring NFS node..."
 
     install_common
+    install_oms_linux_agent
 
     nfs_install_server
     nfs_prepare_shared_home
@@ -492,6 +502,7 @@ function install_bbs {
     bbs_configure_installer_dir
 
     bbs_configure
+    install_oms_linux_agent
     bbs_install
     
     log "Starting Bitbucket Server..."    

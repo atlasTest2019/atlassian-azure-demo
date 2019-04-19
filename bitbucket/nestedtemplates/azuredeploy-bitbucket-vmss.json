@@ -164,6 +164,18 @@
                 "description": "LB FQDN"
             }
         },
+        "vnetName": {
+            "type": "string"
+        },
+        "bbsSubnetName": {
+            "type": "string"
+        },
+        "appGtwyName": {
+            "type": "string"
+        },
+        "appGtwyBEndPoolName": {
+            "type": "string"
+        },
         "sqlServerFqdn": {
             "type": "string"
         },
@@ -254,18 +266,6 @@
         "elasticsearch": {
             "lbIp": "10.0.5.99"
         },
-        "vnet": {
-            "name": "[concat(variables('namespace'), '-vnet')]"
-        },
-        "subnets": {
-            "bbs": {
-                "name": "[concat(variables('namespace'), '-net-bbs')]"
-            }
-        },
-        "appGw": {
-            "name": "[concat(variables('namespace'), '-app-gw')]",
-            "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]"
-        },
         "lb": {
             "name": "[concat(variables('namespace'), '-lb')]",
             "names": {
@@ -342,16 +342,16 @@
                                             "name": "[concat(variables('namespace'), variables('vm').bbs.hostname, '-ipconfig')]",
                                             "properties": {
                                                 "subnet": {
-                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('vnet').name), '/subnets/', variables('subnets').bbs.name)]"
+                                                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('vnetName'), parameters('bbsSubnetName'))]"
                                                 },
                                                 "applicationGatewayBackendAddressPools": [
                                                     {
-                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('appGw').name), '/backendAddressPools/', variables('appGw').bend)]"
+                                                        "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools/', parameters('appGtwyName'), parameters('appGtwyBEndPoolName'))]"
                                                     }
                                                 ],
                                                 "loadBalancerBackendAddressPools": [
                                                     {
-                                                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('lb').name), '/backendAddressPools/', variables('lb').names.bendGit)]"
+                                                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools/', variables('lb').name, variables('lb').names.bendGit)]"
                                                     }
                                                 ]
                                             }

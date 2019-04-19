@@ -113,13 +113,6 @@
                 "description": "The type of storage account used for logs on a Bitbucket Server node"
             }
         },
-        "bbsHttpPort": {
-            "type": "string",
-            "defaultValue": "7990",
-            "metadata": {
-                "description": "Internal port that Bitbucket Server uses to accept HTTP connections"
-            }
-        },
         "bbsHazelcastTag": {
             "type": "string",
             "defaultValue": "HAZELCAST",
@@ -217,30 +210,46 @@
                 "description": "The size of the data disk for Git repositories in GB"
             }
         },
-        "appGatewaySize": {
-            "type": "string",
-            "defaultValue": "Medium",
+        "appGtwyClusterSize": {
+            "type": "int",
             "allowedValues": [
-                "Small",
-                "Medium",
-                "Large"
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
             ],
+            "defaultValue": 2,
+            "minValue": 1,
             "metadata": {
-                "description": "The size of Application Gateway. Can be small, medium and large."
+                "description": "The number of nodes in the Application Gateway cluster."
             }
         },
-        "appGatewayProbeInterval": {
-            "type": "int",
-            "defaultValue": 5,
+        "appGtwyTier": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_Small",
+                "Standard_Medium",
+                "Standard_Large"
+            ],
+            "defaultValue": "Standard_Medium",
             "metadata": {
-                "description": "The interval in seconds for Application Gateway to very that Bitbucket Server node is available"
+                "description": "The Application Gateway size."
             }
         },
-        "appGatewayCapacity": {
-            "type": "int",
-            "defaultValue": 1,
+        "sslBase64EncodedPfxCertificate": {
+            "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "Amount of Application Gateway instances to created"
+                "description": "The certificate to be used for SSL termination on the Azure Application Gateway."
+            }
+        },
+        "sslPfxCertificatePassword": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The password of the certificate for SSL termination."
             }
         },
         "license": {
@@ -306,6 +315,24 @@
                 "description": "The size of Elasticsearch nodes VM."
             }
         },
+        "vnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the BitBucket virtual network."
+            }
+        },
+        "bbsSubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the subnet within the Jira virtual network where the Jira cluster is located."
+            }
+        },
+        "appGtwySubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the Jira virtual network subnet where the Application Gateway is located."
+            }
+        },
         "jumpboxPrivateIpAddress": {
             "type": "string",
             "metadata": {
@@ -350,7 +377,6 @@
     },
     "variables": {
         "namespace": "bitbucket",
-        "suffix": "[uniqueString(resourceGroup().id)]",
         "tags": {
             "vendor": "Atlassian",
             "product": "Bitbucket Server",
@@ -362,37 +388,6 @@
         "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
         "workspaceTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-workspace.json', parameters('_artifactsLocationSasToken')))]",
         "analyticsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-analytics.json', parameters('_artifactsLocationSasToken')))]",
-        "net": {
-            "vnet": {
-                "name": "[concat(variables('namespace'), '-vnet')]"
-            },
-            "subnets": {
-                "appgw": {
-                    "name": "[concat(variables('namespace'), '-net-appgw')]"
-                },
-                "bbs": {
-                    "name": "[concat(variables('namespace'), '-net-bbs')]"
-                }
-            },
-            "appGw": {
-                "name": "[concat(variables('namespace'), '-app-gw')]",
-                "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]"
-            },
-            "lb": {
-                "name": "[concat(variables('namespace'), '-lb')]",
-                "dns": "[concat(variables('namespace'), '-ssh-', variables('suffix'))]",
-                "names": {
-                    "publicIP": "[concat(variables('namespace'), '-lb', '-public-ip')]",
-                    "fendIpConfig": "[concat(variables('namespace'), '-lb', '-fend-ipconfig')]",
-                    "bendGit": "[concat(variables('namespace'), '-lb', '-bend-git')]",
-                    "bendSsh": "[concat(variables('namespace'), '-lb', '-bend-ssh')]",
-                    "bendHttp": "[concat(variables('namespace'), '-lb', '-bend-http')]",
-                    "ruleGit": "[concat(variables('namespace'), '-lb', '-rule-git')]",
-                    "ruleSsh": "[concat(variables('namespace'), '-lb', '-rule-ssh')]",
-                    "ruleHttp": "[concat(variables('namespace'), '-lb', '-rule-http')]"
-                }
-            }
-        },
         "elasticsearch": {
             "dataDiskSize": "[parameters('esDataDiskSize')]",
             "dataNodeCount": "[parameters('esDataNodeCount')]",
@@ -407,7 +402,9 @@
             "sku": "[parameters('workspaceSku')]",
             "retentionInDays": 7
         },
-        "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]"
+        "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]",
+        "gtwyName": "[if(empty(parameters('sslBase64EncodedPfxCertificate')), concat(variables('namespace'), 'appgateway'), concat(variables('namespace'), 'appgateway-https'))]",
+        "gtwyAddressPoolName": "[concat(variables('namespace'), 'appgwaddrpool')]"
     },
     "resources": [
         {
@@ -469,23 +466,35 @@
                     "location": {
                         "value": "[parameters('location')]"
                     },
-                    "appGatewayCapacity": {
-                        "value": "[parameters('appGatewayCapacity')]"
+                    "gtwyName": {
+                        "value": "[variables('gtwyName')]"
                     },
-                    "appGatewayProbeInterval": {
-                        "value": "[parameters('appGatewayProbeInterval')]"
+                    "gtwyAddressPoolName": {
+                        "value": "[variables('gtwyAddressPoolName')]"
                     },
-                    "appGatewaySize": {
-                        "value": "[parameters('appGatewaySize')]"
+                    "appGtwyClusterSize": {
+                        "value": "[parameters('appGtwyClusterSize')]"
                     },
-                    "bbsHttpPort": {
-                        "value": "[parameters('bbsHttpPort')]"
+                    "appGtwyTier": {
+                        "value": "[parameters('appGtwyTier')]"
                     },
                     "vnetName": {
-                        "value": "[variables('net').vnet.name]"
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "sslBase64EncodedPfxCertificate": {
+                        "value": "[parameters('sslBase64EncodedPfxCertificate')]"
+                    },
+                    "sslPfxCertificatePassword": {
+                        "value": "[parameters('sslPfxCertificatePassword')]"
+                    },
+                    "workspaceName": {
+                        "value": "[variables('workspace').name]"
+                    },
+                    "enableAnalytics": {
+                        "value": "[parameters('enableAnalytics')]"
                     },
                     "appGtwySubnetName": {
-                        "value": "[variables('net').subnets.appgw.name]"
+                        "value": "[parameters('appGtwySubnetName')]"
                     },
                     "gtwyIpName": {
                         "value": "[variables('gtwyIpName')]"
@@ -520,10 +529,10 @@
                         "value": "[parameters('azureSqlUsername')]"
                     },
                     "vnetName": {
-                        "value": "[variables('net').vnet.name]"
+                        "value": "[parameters('vnetName')]"
                     },
                     "bbsSubnetName": {
-                        "value": "[variables('net').subnets.bbs.name]"
+                        "value": "[parameters('bbsSubnetName')]"
                     }
                 }
             }
@@ -691,6 +700,18 @@
                     "sshKey": {
                         "value": "[parameters('sshKey')]"
                     },
+                    "vnetName": {
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "bbsSubnetName": {
+                        "value": "[parameters('bbsSubnetName')]"
+                    },
+                    "appGtwyName": {
+                        "value": "[variables('gtwyName')]"
+                    },
+                    "appGtwyBEndPoolName": {
+                        "value": "[variables('gtwyAddressPoolName')]"
+                    },
                     "nfsPrivateIpAddress": {
                         "value": "[parameters('nfsPrivateIpAddress')]"
                     },
@@ -769,7 +790,7 @@
                         "value": "[variables('elasticsearch').dataVmSize]"
                     },
                     "vnetName": {
-                        "value": "[variables('net').vnet.name]"
+                        "value": "[parameters('vnetName')]"
                     }
                 }
             }

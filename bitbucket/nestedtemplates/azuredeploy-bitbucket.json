@@ -543,6 +543,12 @@
                     },
                     "bbsSubnetName": {
                         "value": "[parameters('bbsSubnetName')]"
+                    },
+                    "workspaceName": {
+                        "value": "[variables('workspace').name]"
+                    },
+                    "enableAnalytics": {
+                        "value": "[parameters('enableAnalytics')]"
                     }
                 }
             }
@@ -817,6 +823,14 @@
             "type": "string",
             "value": "[variables('gtwyIpName')]"
         },
+        "gtwyName": {
+            "type": "string",
+            "value": "[variables('gtwyName')]"
+        },
+        "bbsClusterName": {
+            "type": "string",
+            "value": "[reference('bbsVmssTemplate').outputs.clusterName.value]"
+        },
         "ssh": {
             "type": "string",
             "value": "[concat('ssh ', parameters('adminUsername'), '@', parameters('lbFqdn'))]"
@@ -832,6 +846,14 @@
         "sqlServerFqdn": {
             "type": "string",
             "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
+        },
+        "dbDatabaseServerName": {
+            "type": "string",
+            "value": "[reference('dbTemplate').outputs.dbDatabaseServerName.value]"
+        },
+        "dbDatabaseName": {
+            "type": "string",
+            "value": "[reference('dbTemplate').outputs.dbDatabaseName.value]"
         }
     }
 }

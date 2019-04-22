@@ -51,13 +51,6 @@
                 "description": "Azure region (WestUS, CentralUs, AustraliaEast, etc) shared by all of the resources in the template"
             }
         },
-        "esNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.5.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet where Elasticsearch nodes are deployed"
-            }
-        },
         "adminUsername": {
             "type": "string",
             "metadata": {
@@ -347,10 +340,10 @@
                 "description": "The name of the Jira virtual network subnet where the Application Gateway is located."
             }
         },
-        "jumpboxPrivateIpAddress": {
+        "esSubnetName": {
             "type": "string",
             "metadata": {
-                "description": "Jumpbox Private IP Address"
+                "description": "The subnet name where Elasticsearch will be deployed."
             }
         },
         "nfsPrivateIpAddress": {
@@ -402,12 +395,12 @@
         "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
         "workspaceTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-workspace.json', parameters('_artifactsLocationSasToken')))]",
         "analyticsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-analytics.json', parameters('_artifactsLocationSasToken')))]",
+        "esTemplateUri": "[uri(parameters('_artifactsLocation'), concat('elasticsearch/elasticsearch.json', parameters('_artifactsLocationSasToken')))]",
         "elasticsearch": {
             "dataDiskSize": "[parameters('esDataDiskSize')]",
             "dataNodeCount": "[parameters('esDataNodeCount')]",
             "dataVmSize": "[parameters('esNodeSize')]",
             "lbIp": "10.0.5.99",
-            "name": "[concat(variables('namespace'), '-elasticsearch')]",
             "templateBaseUrl": "[concat(uri(parameters('_artifactsLocation'), 'elasticsearch/third-party/'), '')]",
             "version": "5.5.1"
         },
@@ -639,13 +632,66 @@
             }
         },
         {
+            "name": "elasticSearchTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('esTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "_artifactsLocationSasToken": {
+                        "value": "[parameters('_artifactsLocationSasToken')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "dataNodeCount": {
+                        "value": "[variables('elasticsearch').dataNodeCount]"
+                    },
+                    "dataDiskSize": {
+                        "value": "[variables('elasticsearch').dataDiskSize]"
+                    },
+                    "esTemplateBaseUrl": {
+                        "value": "[variables('elasticsearch').templateBaseUrl]"
+                    },
+                    "lbIp": {
+                        "value": "[variables('elasticsearch').lbIp]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "sshKey": {
+                        "value": "[parameters('sshKey')]"
+                    },
+                    "tags": {
+                        "value": "[variables('tags')]"
+                    },
+                    "version": {
+                        "value": "[variables('elasticsearch').version]"
+                    },
+                    "vmSizeDataNodes": {
+                        "value": "[variables('elasticsearch').dataVmSize]"
+                    },
+                    "vnetName": {
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "esSubnetName": {
+                        "value": "[parameters('esSubnetName')]"
+                    }
+                }
+            }
+        },
+        {
             "apiVersion": "2018-05-01",
             "name": "bbsVmssTemplate",
             "type": "Microsoft.Resources/deployments",
             "dependsOn": [
                 "dbTemplate",
                 "nfsVmTemplate",
-                "[variables('elasticsearch').name]"
+                "elasticSearchTemplate"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -749,65 +795,6 @@
                     },
                     "workspaceSecondaryKey": {
                         "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceSecondaryKey.value, '')]"
-                    }
-                }
-            }
-        },
-        {
-            "name": "[variables('elasticsearch').name]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2017-05-10",
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[uri(parameters('_artifactsLocation'), concat('elasticsearch/elasticsearch.json', parameters('_artifactsLocationSasToken')))]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "_artifactsLocationSasToken": {
-                        "value": "[parameters('_artifactsLocationSasToken')]"
-                    },
-                    "adminUsername": {
-                        "value": "[parameters('adminUsername')]"
-                    },
-                    "dataNodeCount": {
-                        "value": "[variables('elasticsearch').dataNodeCount]"
-                    },
-                    "dataDiskSize": {
-                        "value": "[variables('elasticsearch').dataDiskSize]"
-                    },
-                    "esTemplateBaseUrl": {
-                        "value": "[variables('elasticsearch').templateBaseUrl]"
-                    },
-                    "jumpboxIp": {
-                        "value": "[parameters('jumpboxPrivateIpAddress')]"
-                    },
-                    "lbIp": {
-                        "value": "[variables('elasticsearch').lbIp]"
-                    },
-                    "location": {
-                        "value": "[parameters('location')]"
-                    },
-                    "namespace": {
-                        "value": "[variables('elasticsearch').name]"
-                    },
-                    "netCIDR": {
-                        "value": "[parameters('esNetCIDR')]"
-                    },
-                    "sshKey": {
-                        "value": "[parameters('sshKey')]"
-                    },
-                    "tags": {
-                        "value": "[variables('tags')]"
-                    },
-                    "version": {
-                        "value": "[variables('elasticsearch').version]"
-                    },
-                    "vmSizeDataNodes": {
-                        "value": "[variables('elasticsearch').dataVmSize]"
-                    },
-                    "vnetName": {
-                        "value": "[parameters('vnetName')]"
                     }
                 }
             }

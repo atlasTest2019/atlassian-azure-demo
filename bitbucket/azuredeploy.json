@@ -51,41 +51,6 @@
                 "description": "Azure region (WestUS, CentralUs, AustraliaEast, etc) shared by all of the resources in the template"
             }
         },
-        "vnetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.0.0/16",
-            "metadata": {
-                "description": "Address space for the Virtual Network created by the template"
-            }
-        },
-        "publicNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.1.0/24",
-            "metadata": {
-                "description": "Address space for the public subnet in the vnet"
-            }
-        },
-        "appgwNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.2.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet with Application Gateways"
-            }
-        },
-        "bbsNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.4.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet where Bitbucket Server nodes are deployed"
-            }
-        },
-        "esNetCIDR": {
-            "type": "string",
-            "defaultValue": "10.0.5.0/24",
-            "metadata": {
-                "description": "Address space for the private subnet where Elasticsearch nodes are deployed"
-            }
-        },
         "adminUsername": {
             "type": "string",
             "metadata": {
@@ -439,14 +404,8 @@
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
                     },
-                    "appgwNetCIDR": {
-                        "value": "[parameters('appgwNetCIDR')]"
-                    },
                     "bbsHazelcastPort": {
                         "value": "[parameters('bbsHazelcastPort')]"
-                    },
-                    "bbsNetCIDR": {
-                        "value": "[parameters('bbsNetCIDR')]"
                     },
                     "httpGatewaySize": {
                         "value": "[parameters('httpGatewaySize')]"
@@ -460,15 +419,9 @@
                     "nfsVmSize": {
                         "value": "[parameters('nfsVmSize')]"
                     },
-                    "publicNetCIDR": {
-                        "value": "[parameters('publicNetCIDR')]"
-                    },
                     "sshKey": {
                         "value": "[parameters('sshKey')]"
-                    },
-                    "vnetCIDR": {
-                        "value": "[parameters('vnetCIDR')]"
-                    }                    
+                    }
                 }
             }
         },
@@ -570,9 +523,6 @@
                     "esDataNodeCount": {
                         "value": "[parameters('esDataNodeCount')]"
                     },
-                    "esNetCIDR": {
-                        "value": "[parameters('esNetCIDR')]"
-                    },
                     "esNodeSize": {
                         "value": "[parameters('esNodeSize')]"
                     },
@@ -603,8 +553,8 @@
                     "appGtwySubnetName": {
                         "value": "[reference('vpcTemplate').outputs.appGtwySubnetName.value]"
                     },
-                    "jumpboxPrivateIpAddress": {
-                        "value": "[reference('vpcTemplate').outputs.jumpboxPrivateIpAddress.value]"
+                    "esSubnetName": {
+                        "value": "[reference('vpcTemplate').outputs.esSubnetName.value]"
                     },
                     "nfsPrivateIpAddress": {
                         "value": "[reference('vpcTemplate').outputs.nfsPrivateIpAddress.value]"

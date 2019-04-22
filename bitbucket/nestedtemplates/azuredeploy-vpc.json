@@ -43,6 +43,13 @@
                 "description": "Address space for the private subnet where Bitbucket Server nodes are deployed"
             }
         },
+        "esNetCIDR": {
+            "type": "string",
+            "defaultValue": "10.0.5.0/24",
+            "metadata": {
+                "description": "Address space for the private subnet where Elasticsearch nodes are deployed"
+            }
+        },
         "sshKey": {
             "type": "string",
             "metadata": {
@@ -111,7 +118,6 @@
                 "description": "VM type which used for forwarding HTTP traffic from Load Balancer to Application Gateway"
             }
         }
-
     },
     "variables": {
         "namespace": "bitbucket",
@@ -148,13 +154,16 @@
             },
             "nsg": {
                 "public": {
-                    "name": "[concat(variables('namespace'), '-public-nsg')]"
+                    "name": "[concat(variables('namespace'), '-nsg-public')]"
                 },
                 "appgw": {
-                    "name": "[concat(variables('namespace'), '-appgw-nsg')]"
+                    "name": "[concat(variables('namespace'), '-nsg-appgtw')]"
                 },
                 "bbs": {
-                    "name": "[concat(variables('namespace'), '-bbs-nsg')]"
+                    "name": "[concat(variables('namespace'), '-nsg-bbs')]"
+                },
+                "elasticsearch": {
+                    "name": "[concat(variables('namespace'), '-nsg-es')]"
                 }
             },
             "subnets": {
@@ -169,6 +178,10 @@
                 "bbs": {
                     "name": "[concat(variables('namespace'), '-net-bbs')]",
                     "cidr": "[parameters('bbsNetCIDR')]"
+                },
+                "elasticsearch": {
+                    "name": "[concat(variables('namespace'), '-net-es')]",
+                    "cidr": "[parameters('esNetCIDR')]"
                 }
             },
             "lb": {
@@ -408,6 +421,48 @@
             }
         },
         {
+            "name": "[variables('net').nsg.elasticsearch.name]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2017-10-01",
+            "location": "[parameters('location')]",
+            "tags": "[variables('tags')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "allowBBS",
+                        "properties": {
+                            "access": "Allow",
+                            "description": "Allows incoming traffic from BBS nodes",
+                            "direction": "Inbound",
+                            "protocol": "Tcp",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "[variables('net').subnets.elasticsearch.cidr]",
+                            "destinationPortRanges": [
+                                "9200",
+                                "9300"
+                            ],
+                            "priority": 101
+                        }
+                    },
+                    {
+                        "name": "allowSSH",
+                        "properties": {
+                            "access": "Allow",
+                            "description": "Allows incoming SSH traffic from jumpbox to ES data nodes",
+                            "direction": "Inbound",
+                            "protocol": "Tcp",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "[variables('net').subnets.elasticsearch.cidr]",
+                            "destinationPortRange": "22",
+                            "priority": 102
+                        }
+                    }
+                ]
+            }
+        },
+        {
             "type": "Microsoft.Network/virtualNetworks",
             "apiVersion": "2017-10-01",
             "location": "[parameters('location')]",
@@ -415,7 +470,8 @@
             "dependsOn": [
                 "[variables('net').nsg.public.name]",
                 "[variables('net').nsg.appgw.name]",
-                "[variables('net').nsg.bbs.name]"
+                "[variables('net').nsg.bbs.name]",
+                "[variables('net').nsg.elasticsearch.name]"
             ],
             "name": "[variables('net').vnet.name]",
             "properties": {
@@ -455,6 +511,15 @@
                                     "service": "Microsoft.Sql"
                                 }
                             ]
+                        }
+                    },
+                    {
+                        "name": "[variables('net').subnets.elasticsearch.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('net').subnets.elasticsearch.cidr]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('net').nsg.elasticsearch.name)]"
+                            }
                         }
                     }
                 ]
@@ -590,7 +655,7 @@
                         }
                     }
                 ],
-                "enableAcceleratedNetworking": true 
+                "enableAcceleratedNetworking": true
             }
         },
         {
@@ -654,6 +719,10 @@
         "appGtwySubnetName": {
             "type": "string",
             "value": "[variables('net').subnets.appgw.name]"
+        },
+        "esSubnetName": {
+            "type": "string",
+            "value": "[variables('net').subnets.elasticsearch.name]"
         },
         "sshLbIpName": {
             "type": "string",

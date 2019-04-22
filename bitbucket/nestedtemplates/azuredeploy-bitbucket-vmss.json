@@ -404,6 +404,10 @@
         "cmd": {
             "type": "string",
             "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs')]"
+        },
+        "clusterName": {
+            "type": "string",
+            "value": "[variables('vm').bbs.name]"
         }
     }
 }

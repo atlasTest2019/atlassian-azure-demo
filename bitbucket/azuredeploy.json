@@ -146,12 +146,24 @@
                 "description": "The database type."
             }
         },
-        "azureSqlTier": {
+        "dbTier": {
             "type": "string",
-            "defaultValue": "P2",
             "allowedValues": [
                 "Basic",
-                "S0",
+                "Standard",
+                "Premium",
+                "GeneralPurpose",
+                "BusinessCritical"
+            ],
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "The database service tier. Note that if the 'bbClusterSize' parameter is used this value will be ignored."
+            }
+        },
+        "dbTierSize": {
+            "type": "string",
+            "allowedValues": [
+                "Basic",
                 "S1",
                 "S2",
                 "S3",
@@ -165,10 +177,63 @@
                 "P4",
                 "P6",
                 "P11",
-                "P15"
+                "P15",
+                "GP_Gen4_1",
+                "GP_Gen4_10",
+                "GP_Gen4_16",
+                "GP_Gen4_2",
+                "GP_Gen4_24",
+                "GP_Gen4_3",
+                "GP_Gen4_4",
+                "GP_Gen4_5",
+                "GP_Gen4_6",
+                "GP_Gen4_7",
+                "GP_Gen4_8",
+                "GP_Gen4_9",
+                "GP_Gen5_10",
+                "GP_Gen5_12",
+                "GP_Gen5_14",
+                "GP_Gen5_16",
+                "GP_Gen5_18",
+                "GP_Gen5_2",
+                "GP_Gen5_20",
+                "GP_Gen5_24",
+                "GP_Gen5_32",
+                "GP_Gen5_4",
+                "GP_Gen5_40",
+                "GP_Gen5_6",
+                "GP_Gen5_8",
+                "GP_Gen5_80",
+                "BC_Gen4_1",
+                "BC_Gen4_10",
+                "BC_Gen4_16",
+                "BC_Gen4_2",
+                "BC_Gen4_24",
+                "BC_Gen4_3",
+                "BC_Gen4_4",
+                "BC_Gen4_5",
+                "BC_Gen4_6",
+                "BC_Gen4_7",
+                "BC_Gen4_8",
+                "BC_Gen4_9",
+                "BC_Gen5_10",
+                "BC_Gen5_12",
+                "BC_Gen5_14",
+                "BC_Gen5_16",
+                "BC_Gen5_18",
+                "BC_Gen5_2",
+                "BC_Gen5_20",
+                "BC_Gen5_24",
+                "BC_Gen5_32",
+                "BC_Gen5_4",
+                "BC_Gen5_40",
+                "BC_Gen5_6",
+                "BC_Gen5_8",
+                "BC_Gen5_80"
             ],
+            "defaultValue": "S2",
             "metadata": {
-                "description": "Database Tier for Azure SQL DTU pricing model"
+                "description": "The size of the database service tier. Basic, Standard (S1..S12) and Premium (P1..P15) tier sizes are available. Choose GP and BC SKUs for vCore model. Note that if the 'bbClusterSize' parameter is used this value will be ignored."
             }
         },
         "azureSqlUsername": {
@@ -351,6 +416,20 @@
                 "description": "Enable Azure Operational Insights."
             }
         },
+        "enableEmailAlerts": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable email alerts."
+            }
+        },
+        "enableApplicationInsights": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Enable Azure Application Insights."
+            }
+        },
         "workspaceSku": {
             "type": "string",
             "defaultValue": "Free",
@@ -371,7 +450,8 @@
     "variables": {
         "vpcTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-vpc.json', parameters('_artifactsLocationSasToken')))]",
         "bitbucketTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket.json', parameters('_artifactsLocationSasToken')))]",
-        "domainTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-domain.json', parameters('_artifactsLocationSasToken')))]"
+        "domainTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-domain.json', parameters('_artifactsLocationSasToken')))]",
+        "alertsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-alerts.json', parameters('_artifactsLocationSasToken')))]"
     },
     "resources": [
         {
@@ -476,7 +556,7 @@
                         "value": "[parameters('azureSqlPassword')]"
                     },
                     "azureSqlTier": {
-                        "value": "[parameters('azureSqlTier')]"
+                        "value": "[parameters('dbTierSize')]"
                     },
                     "azureSqlUsername": {
                         "value": "[parameters('azureSqlUsername')]"
@@ -601,6 +681,54 @@
                     },
                     "sshPrefix": {
                         "value": "ssh-bitbucket"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "alertsTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[parameters('enableEmailAlerts')]",
+            "dependsOn": [
+                "bitbucketTemplate"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('alertsTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "adminUserEmail": {
+                        "value": "[parameters('bitbucketAdminEmail')]"
+                    },
+                    "gtwyName": {
+                        "value": "[reference('bitbucketTemplate').outputs.gtwyName.value]"
+                    },
+                    "bbsClusterName": {
+                        "value": "[reference('bitbucketTemplate').outputs.bbsClusterName.value]"
+                    },
+                    "appInsightsName": {
+                        "value": "[if(parameters('enableApplicationInsights'), reference('bitbucketTemplate').outputs.appInsightsName.value, '')]"
+                    },
+                    "statusCheckUrl": {
+                        "value": "[concat(if(not(empty(parameters('sslBase64EncodedPfxCertificate'))), concat('https://', if(greater(length(parameters('cname')), 0), reference('domainTemplate').outputs.alias.value, reference('bitbucketTemplate').outputs.appEndpoint.value)), concat('http://', if(greater(length(parameters('cname')), 0), reference('domainTemplate').outputs.alias.value, reference('bitbucketTemplate').outputs.appEndpoint.value))), '/status')]"
+                    },
+                    "dbType": {
+                        "value": "[if(equals(parameters('dbType'), 'Azure SQL DB'), 'sqlserver', if(equals(parameters('dbType'), 'Azure DB for PostgreSQL'), 'postgres', 'mysql'))]"
+                    },
+                    "isDbVCoreModel": {
+                        "value": "[contains('GeneralPurpose, BusinessCritical', parameters('dbTier'))]"
+                    },
+                    "dbDatabaseServerName": {
+                        "value": "[split(reference('bitbucketTemplate').outputs.dbDatabaseServerName.value, '.')[0]]"
+                    },
+                    "dbDatabaseName": {
+                        "value": "[reference('bitbucketTemplate').outputs.dbDatabaseName.value]"
                     }
                 }
             }

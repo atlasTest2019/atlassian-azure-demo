@@ -51,6 +51,19 @@
         },
         "bbsSubnetName": {
             "type": "string"
+        },
+        "workspaceName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the Azure Operations Management Suite (OMS) workspace."
+            }
+        },
+        "enableAnalytics": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable Azure Operational Insights. Note that an Azure Operations Management Suite (OMS) workspace must first exist."
+            }
         }
     },
     "variables": {
@@ -69,6 +82,7 @@
                 "name": "[concat(variables('namespace'), '-endpoint')]"
             }
         },
+        "retentionInDays": 14,
         "lookup": {
             "sql": {
                 "tierToEdition": {
@@ -115,7 +129,107 @@
                         "edition": "[variables('sql').database.edition]",
                         "requestedServiceObjectiveName": "[parameters('azureSqlTier')]",
                         "collation": "SQL_Latin1_General_CP1_CS_AS"
-                    }
+                    },
+                    "resources": [
+                        {
+                            "comments": "DiagnosticSettings have to be within the nested, nested SQL DB - https://david-obrien.net/2018/06/azure-sql-diagnostics/. NB diagnostic hangs around too ie doesn't get deleted on RG deletion.",
+                            "type": "providers/diagnosticSettings",
+                            "name": "Microsoft.Insights/diagnostic_primary",
+                            "condition": "[parameters('enableAnalytics')]",
+                            "apiVersion": "2017-05-01-preview",
+                            "dependsOn": [
+                                "[resourceId('Microsoft.Sql/servers/databases', variables('sql').server.name, variables('sql').database.name)]"
+                            ],
+                            "properties": {
+                                "name": "sqlSaveToWorkspace",
+                                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]",
+                                "logs": [
+                                    {
+                                        "category": "Blocks",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "QueryStoreWaitStatistics",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "Errors",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "QueryStoreRuntimeStatistics",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "DatabaseWaitStatistics",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "Timeouts",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "SQLInsights",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "AutomaticTuning",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    },
+                                    {
+                                        "category": "Deadlocks",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "days": "[variables('retentionInDays')]",
+                                            "enabled": false
+                                        }
+                                    }
+                                ],
+                                "metrics": [
+                                    {
+                                        "category": "AllMetrics",
+                                        "enabled": true,
+                                        "retentionPolicy": {
+                                            "enabled": false,
+                                            "days": "[variables('retentionInDays')]"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
                 },
                 {
                     "type": "virtualNetworkRules",
@@ -136,6 +250,14 @@
         "sqlServerFqdn": {
             "type": "string",
             "value": "[reference(variables('sql').server.name).fullyQualifiedDomainName]"
+        },
+        "dbDatabaseServerName": {
+            "type": "string",
+            "value": "[variables('sql').server.name]"
+        },
+        "dbDatabaseName": {
+            "type": "string",
+            "value": "[variables('sql').database.name]"
         }
     }
 }

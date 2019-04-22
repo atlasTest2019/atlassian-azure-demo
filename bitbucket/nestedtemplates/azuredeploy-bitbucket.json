@@ -395,7 +395,7 @@
         "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
         "workspaceTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-workspace.json', parameters('_artifactsLocationSasToken')))]",
         "analyticsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-analytics.json', parameters('_artifactsLocationSasToken')))]",
-        "esTemplateUri": "[uri(parameters('_artifactsLocation'), concat('elasticsearch/elasticsearch.json', parameters('_artifactsLocationSasToken')))]",
+        "esTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-elasticsearch.json', parameters('_artifactsLocationSasToken')))]",
         "elasticsearch": {
             "dataDiskSize": "[parameters('esDataDiskSize')]",
             "dataNodeCount": "[parameters('esDataNodeCount')]",

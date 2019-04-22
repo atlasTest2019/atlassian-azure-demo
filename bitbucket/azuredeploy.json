@@ -155,13 +155,6 @@
                 "description": "The type of storage account used for logs on a Bitbucket Server node"
             }
         },
-        "bbsHttpPort": {
-            "type": "string",
-            "defaultValue": "7990",
-            "metadata": {
-                "description": "Internal port that Bitbucket Server uses to accept HTTP connections"
-            }
-        },
         "bbsHazelcastTag": {
             "type": "string",
             "defaultValue": "HAZELCAST",
@@ -259,30 +252,53 @@
                 "description": "The size of the data disk for Git repositories in GB"
             }
         },
-        "appGatewaySize": {
-            "type": "string",
-            "defaultValue": "Medium",
+        "appGtwyClusterSize": {
+            "type": "int",
             "allowedValues": [
-                "Small",
-                "Medium",
-                "Large"
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
             ],
+            "defaultValue": 2,
+            "minValue": 1,
             "metadata": {
-                "description": "The size of Application Gateway. Can be small, medium and large."
+                "description": "The number of nodes in the Application Gateway cluster."
             }
         },
-        "appGatewayProbeInterval": {
-            "type": "int",
-            "defaultValue": 5,
+        "appGtwyTier": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_Small",
+                "Standard_Medium",
+                "Standard_Large"
+            ],
+            "defaultValue": "Standard_Medium",
             "metadata": {
-                "description": "The interval in seconds for Application Gateway to very that Bitbucket Server node is available"
+                "description": "The Application Gateway size."
             }
         },
-        "appGatewayCapacity": {
-            "type": "int",
-            "defaultValue": 1,
+        "cname": {
+            "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "Amount of Application Gateway instances to created"
+                "description": "This is the Canonical Name record (CNAME) for your organization. If you don't provide one, Azure will generate a random sub domain for your instance."
+            }
+        },
+        "sslBase64EncodedPfxCertificate": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The certificate to be used for SSL termination on the Azure Application Gateway."
+            }
+        },
+        "sslPfxCertificatePassword": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The password of the certificate for SSL termination."
             }
         },
         "httpGatewaySize": {
@@ -389,7 +405,8 @@
     },
     "variables": {
         "vpcTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-vpc.json', parameters('_artifactsLocationSasToken')))]",
-        "bitbucketTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket.json', parameters('_artifactsLocationSasToken')))]"
+        "bitbucketTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket.json', parameters('_artifactsLocationSasToken')))]",
+        "domainTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-domain.json', parameters('_artifactsLocationSasToken')))]"
     },
     "resources": [
         {
@@ -427,9 +444,6 @@
                     },
                     "bbsHazelcastPort": {
                         "value": "[parameters('bbsHazelcastPort')]"
-                    },
-                    "bbsHttpPort": {
-                        "value": "[parameters('bbsHttpPort')]"
                     },
                     "bbsNetCIDR": {
                         "value": "[parameters('bbsNetCIDR')]"
@@ -484,14 +498,23 @@
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
                     },
-                    "appGatewayCapacity": {
-                        "value": "[parameters('appGatewayCapacity')]"
+                    "appGtwyClusterSize": {
+                        "value": "[parameters('appGtwyClusterSize')]"
                     },
-                    "appGatewayProbeInterval": {
-                        "value": "[parameters('appGatewayProbeInterval')]"
+                    "appGtwyTier": {
+                        "value": "[parameters('appGtwyTier')]"
                     },
-                    "appGatewaySize": {
-                        "value": "[parameters('appGatewaySize')]"
+                    "cname": {
+                        "value": "[if(greater(length(parameters('cname')), 0), concat('bitbucket.', parameters('cname')), parameters('cname'))]"
+                    },
+                    "sshCname": {
+                        "value": "[if(greater(length(parameters('cname')), 0), concat('ssh-bitbucket.', parameters('cname')), parameters('cname'))]"
+                    },
+                    "sslBase64EncodedPfxCertificate": {
+                        "value": "[parameters('sslBase64EncodedPfxCertificate')]"
+                    },
+                    "sslPfxCertificatePassword": {
+                        "value": "[parameters('sslPfxCertificatePassword')]"
                     },
                     "dbType": {
                         "value": "[parameters('dbType')]"
@@ -511,14 +534,8 @@
                     "bbsDiskStorageType": {
                         "value": "[parameters('bbsDiskStorageType')]"
                     },
-                    "bbsHazelcastPort": {
-                        "value": "[parameters('bbsHazelcastPort')]"
-                    },
                     "bbsHazelcastTag": {
                         "value": "[parameters('bbsHazelcastTag')]"
-                    },
-                    "bbsHttpPort": {
-                        "value": "[parameters('bbsHttpPort')]"
                     },
                     "bbsNodeCount": {
                         "value": "[parameters('bbsNodeCount')]"
@@ -577,6 +594,15 @@
                     "sshKey": {
                         "value": "[parameters('sshKey')]"
                     },
+                    "vnetName": {
+                        "value": "[reference('vpcTemplate').outputs.vnetName.value]"
+                    },
+                    "bbsSubnetName": {
+                        "value": "[reference('vpcTemplate').outputs.bbsSubnetName.value]"
+                    },
+                    "appGtwySubnetName": {
+                        "value": "[reference('vpcTemplate').outputs.appGtwySubnetName.value]"
+                    },
                     "jumpboxPrivateIpAddress": {
                         "value": "[reference('vpcTemplate').outputs.jumpboxPrivateIpAddress.value]"
                     },
@@ -595,16 +621,53 @@
 
                 }
             }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "domainTemplate",
+            "dependsOn": [
+                "bitBucketTemplate"
+            ],
+            "condition": "[greater(length(parameters('cname')), 0)]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('domainTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "cname": {
+                        "value": "[parameters('cname')]"
+                    },
+                    "gtwyIpName": {
+                        "value": "[reference('bitBucketTemplate').outputs.gtwyIpName.value]"
+                    },
+                    "prefix": {
+                        "value": "bitbucket"
+                    },
+                    "sshLbIpName": {
+                        "value": "[reference('vpcTemplate').outputs.sshLbIpName.value]"
+                    },
+                    "sshPrefix": {
+                        "value": "ssh-bitbucket"
+                    }
+                }
+            }
         }
     ],
     "outputs": {
+        "appEndpoint": {
+            "type": "string",
+            "value": "[reference('bitbucketTemplate').outputs.appEndpoint.value]"
+        },
+        "sshEndpoint": {
+            "type": "string",
+            "value": "[reference('bitbucketTemplate').outputs.sshEndpoint.value]"
+        },
         "ssh": {
             "type": "string",
             "value": "[concat('ssh ', parameters('adminUsername'), '@', reference('vpcTemplate').outputs.ssh.value)]"
-        },
-        "appEndpoint": {
-            "type": "string",
-            "value": "[reference('bitbucketTemplate').outputs.appGatewayFqdn.value]"
         },
         "jumpbox": {
             "type": "string",

@@ -158,16 +158,25 @@
                 "description": "NFS Private IP Address"
             }
         },
-        "lbFqdn": {
-            "type": "string",
-            "metadata": {
-                "description": "LB FQDN"
-            }
+        "vnetName": {
+            "type": "string"
+        },
+        "bbsSubnetName": {
+            "type": "string"
+        },
+        "appGtwyName": {
+            "type": "string"
+        },
+        "appGtwyBEndPoolName": {
+            "type": "string"
         },
         "sqlServerFqdn": {
             "type": "string"
         },
-        "appGatewayFqdn": {
+        "bbsBaseUrl": {
+            "type": "string"
+        },
+        "sshLbBaseUrl": {
             "type": "string"
         },
         "workspaceId": {
@@ -254,18 +263,6 @@
         "elasticsearch": {
             "lbIp": "10.0.5.99"
         },
-        "vnet": {
-            "name": "[concat(variables('namespace'), '-vnet')]"
-        },
-        "subnets": {
-            "bbs": {
-                "name": "[concat(variables('namespace'), '-net-bbs')]"
-            }
-        },
-        "appGw": {
-            "name": "[concat(variables('namespace'), '-app-gw')]",
-            "bend": "[concat(variables('namespace'), '-app-gw', '-bend')]"
-        },
         "lb": {
             "name": "[concat(variables('namespace'), '-lb')]",
             "names": {
@@ -342,16 +339,16 @@
                                             "name": "[concat(variables('namespace'), variables('vm').bbs.hostname, '-ipconfig')]",
                                             "properties": {
                                                 "subnet": {
-                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('vnet').name), '/subnets/', variables('subnets').bbs.name)]"
+                                                    "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('vnetName'), parameters('bbsSubnetName'))]"
                                                 },
                                                 "applicationGatewayBackendAddressPools": [
                                                     {
-                                                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', variables('appGw').name), '/backendAddressPools/', variables('appGw').bend)]"
+                                                        "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools/', parameters('appGtwyName'), parameters('appGtwyBEndPoolName'))]"
                                                     }
                                                 ],
                                                 "loadBalancerBackendAddressPools": [
                                                     {
-                                                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('lb').name), '/backendAddressPools/', variables('lb').names.bendGit)]"
+                                                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools/', variables('lb').name, variables('lb').names.bendGit)]"
                                                     }
                                                 ]
                                             }
@@ -361,37 +358,33 @@
                                 }
                             }
                         ]
-                    }
-                }
-            },
-            "resources": [
-                {
-                    "name": "[concat(variables('vm').bbs.name, '-extension')]",
-                    "type": "extensions",
-                    "location": "[parameters('location')]",
-                    "apiVersion": "2018-06-01",
-                    "dependsOn": [
-                        "[variables('vm').bbs.name]"
-                    ],
-                    "properties": {
-                        "publisher": "Microsoft.Azure.Extensions",
-                        "type": "CustomScript",
-                        "typeHandlerVersion": "2.0",
-                        "autoUpgradeMinorVersion": true,
-                        "settings": {
-                            "fileUris": [
-                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
-                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
-                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
-                            ],
-                            "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
+                    },
+                    "extensionProfile": {
+                        "extensions": [
+                            {
+                            "name": "[concat(variables('vm').bbs.name, 'bbs-install-script')]",
+                            "properties": {
+                                "publisher": "Microsoft.Azure.Extensions",
+                                "type": "CustomScript",
+                                "typeHandlerVersion": "2.0",
+                                "autoUpgradeMinorVersion": true,
+                                "settings": {
+                                    "fileUris": [
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
+                                    ],
+                                    "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
+                                }
+                            }
                         }
+                        ]
                     }
                 }
-            ]
+            }
         },
         {
             "name": "[guid(resourceGroup().id)]",
@@ -410,7 +403,7 @@
     "outputs": {
         "cmd": {
             "type": "string",
-            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', 'http://', parameters('appGatewayFqdn'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('lbFqdn'), ':7999', '\"', ' bash install.sh bbs')]"
+            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs')]"
         }
     }
 }

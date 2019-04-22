@@ -122,9 +122,9 @@
             "provider": "2F0AF47A-92C7-413A-9009-C3815BFF7AF6"
         },
         "image": {
-            "publisher": "[variables('vm').jumpbox.image.publisher]",
-            "offer": "[variables('vm').jumpbox.image.offer]",
-            "sku": "[variables('vm').jumpbox.image.sku]",
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "16.04.0-LTS",
             "version": "latest"
         },
         "net": {
@@ -155,36 +155,6 @@
                 },
                 "bbs": {
                     "name": "[concat(variables('namespace'), '-bbs-nsg')]"
-                },
-                "rules": {
-                    "denyInbound": {
-                        "name": "denyInbound",
-                        "properties": {
-                            "description": "Deny All",
-                            "protocol": "*",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "*",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Deny",
-                            "direction": "Inbound",
-                            "priority": 1001
-                        }
-                    },
-                    "denyOutbound": {
-                        "name": "denyOutbound",
-                        "properties": {
-                            "description": "Deny All",
-                            "protocol": "*",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "*",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Deny",
-                            "direction": "Outbound",
-                            "priority": 1002
-                        }
-                    }
                 }
             },
             "subnets": {
@@ -220,22 +190,12 @@
             "jumpbox": {
                 "name": "[concat(variables('namespace'), 'jumpbox')]",
                 "size": "[parameters('jumpboxSize')]",
-                "hostname": "[parameters('jumpboxHostname')]",
-                "image": {
-                    "publisher": "Canonical",
-                    "offer": "UbuntuServer",
-                    "sku": "16.04.0-LTS"
-                }
+                "hostname": "[parameters('jumpboxHostname')]"
             },
             "nfs": {
                 "name": "[concat(variables('namespace'), '-nfs')]",
                 "size": "[parameters('nfsVmSize')]",
-                "hostname": "bbsnfs",
-                "image": {
-                    "publisher": "Canonical",
-                    "offer": "UbuntuServer",
-                    "sku": "16.04.0-LTS"
-                }
+                "hostname": "bbsnfs"
             }
         }
     },
@@ -338,9 +298,7 @@
                             "direction": "Outbound",
                             "priority": 101
                         }
-                    },
-                    "[variables('net').nsg.rules.denyInbound]",
-                    "[variables('net').nsg.rules.denyOutbound]"
+                    }
                 ]
             }
         },
@@ -445,8 +403,7 @@
                             "priority": 202,
                             "direction": "Inbound"
                         }
-                    },
-                    "[variables('net').nsg.rules.denyInbound]"
+                    }
                 ]
             }
         },
@@ -686,6 +643,22 @@
         }
     ],
     "outputs": {
+        "vnetName": {
+            "type": "string",
+            "value": "[variables('net').vnet.name]"
+        },
+        "bbsSubnetName": {
+            "type": "string",
+            "value": "[variables('net').subnets.bbs.name]"
+        },
+        "appGtwySubnetName": {
+            "type": "string",
+            "value": "[variables('net').subnets.appgw.name]"
+        },
+        "sshLbIpName": {
+            "type": "string",
+            "value": "[variables('net').lb.names.publicIP]"
+        },
         "ssh": {
             "type": "string",
             "value": "[reference(variables('net').lb.names.publicIP).dnsSettings.fqdn]"

@@ -655,6 +655,10 @@
             "type": "string",
             "value": "[variables('net').subnets.appgw.name]"
         },
+        "sshLbIpName": {
+            "type": "string",
+            "value": "[variables('net').lb.names.publicIP]"
+        },
         "ssh": {
             "type": "string",
             "value": "[reference(variables('net').lb.names.publicIP).dnsSettings.fqdn]"

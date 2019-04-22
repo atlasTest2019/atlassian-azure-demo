@@ -238,6 +238,20 @@
                 "description": "The Application Gateway size."
             }
         },
+        "cname": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "This is the Canonical Name record (CNAME) for your organization. If you don't provide one, Azure will generate a random sub domain for your instance."
+            }
+        },
+        "sshCname": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "This is the SSH Canonical Name record (CNAME) for your organization. If you don't provide one, Azure will generate a random sub domain for your instance."
+            }
+        },
         "sslBase64EncodedPfxCertificate": {
             "type": "string",
             "defaultValue": "",
@@ -246,7 +260,7 @@
             }
         },
         "sslPfxCertificatePassword": {
-            "type": "string",
+            "type": "securestring",
             "defaultValue": "",
             "metadata": {
                 "description": "The password of the certificate for SSL termination."
@@ -404,7 +418,10 @@
         },
         "gtwyIpName": "[concat(variables('namespace'), '-appgtwyip-', uniqueString(resourceGroup().id))]",
         "gtwyName": "[if(empty(parameters('sslBase64EncodedPfxCertificate')), concat(variables('namespace'), 'appgateway'), concat(variables('namespace'), 'appgateway-https'))]",
-        "gtwyAddressPoolName": "[concat(variables('namespace'), 'appgwaddrpool')]"
+        "gtwyAddressPoolName": "[concat(variables('namespace'), 'appgwaddrpool')]",
+        "isSSLSpecified": "[not(empty(parameters('sslBase64EncodedPfxCertificate')))]",
+        "httpScheme": "[if(variables('isSSLSpecified'), 'https://', 'http://')]",
+        "isCNameSpecified": "[not(empty(parameters('cname')))]"
     },
     "resources": [
         {
@@ -715,14 +732,14 @@
                     "nfsPrivateIpAddress": {
                         "value": "[parameters('nfsPrivateIpAddress')]"
                     },
-                    "lbFqdn": {
-                        "value": "[parameters('lbFqdn')]"
-                    },
                     "sqlServerFqdn": {
                         "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
                     },
-                    "appGatewayFqdn": {
-                        "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
+                    "bbsBaseUrl": {
+                        "value": "[concat(variables('httpScheme'), if(variables('isCNameSpecified'), parameters('cname'), reference(variables('gtwyIpName')).dnsSettings.fqdn))]"
+                    },
+                    "sshLbBaseUrl": {
+                        "value": "[concat('ssh://', if(variables('isCNameSpecified'), parameters('sshCname'), parameters('lbFqdn')))]"
                     },
                     "workspaceId": {
                         "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceId.value, '')]"
@@ -800,6 +817,18 @@
         "appGatewayFqdn": {
             "type": "string",
             "value": "[reference(variables('gtwyIpName')).dnsSettings.fqdn]"
+        },
+        "appEndpoint": {
+            "type": "string",
+            "value": "[concat(variables('httpScheme'), if(variables('isCNameSpecified'), parameters('cname'), reference(variables('gtwyIpName')).dnsSettings.fqdn))]"
+        },
+        "sshEndpoint": {
+            "type": "string",
+            "value": "[concat('ssh://', if(variables('isCNameSpecified'), parameters('sshCname'), parameters('lbFqdn')))]"
+        },
+        "gtwyIpName": {
+            "type": "string",
+            "value": "[variables('gtwyIpName')]"
         },
         "ssh": {
             "type": "string",

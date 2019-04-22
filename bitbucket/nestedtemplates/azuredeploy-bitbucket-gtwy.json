@@ -69,7 +69,7 @@
             }
         },
         "sslPfxCertificatePassword": {
-            "type": "string",
+            "type": "securestring",
             "defaultValue": "",
             "metadata": {
                 "description": "The password of the certificate for SSL termination."

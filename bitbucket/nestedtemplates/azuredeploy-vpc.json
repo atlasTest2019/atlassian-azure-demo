@@ -239,20 +239,6 @@
                             "direction": "Inbound",
                             "priority": 100
                         }
-                    },
-                    {
-                        "name": "denyall",
-                        "properties": {
-                            "description": "Deny all",
-                            "protocol": "*",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "*",
-                            "sourceAddressPrefix": "Internet",
-                            "destinationAddressPrefix": "VirtualNetwork",
-                            "access": "Deny",
-                            "direction": "Inbound",
-                            "priority": 1001
-                        }
                     }
                 ]
             }
@@ -295,20 +281,6 @@
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
                             "direction": "Inbound",
-                            "priority": 101
-                        }
-                    },
-                    {
-                        "name": "allowOutbound",
-                        "properties": {
-                            "description": "Allows outgoing HTTP traffic only from App Gateway subnet towards Internet",
-                            "protocol": "Tcp",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "[parameters('bbsHttpPort')]",
-                            "sourceAddressPrefix": "[variables('net').subnets.appgw.cidr]",
-                            "destinationAddressPrefix": "[variables('net').subnets.bbs.cidr]",
-                            "access": "Allow",
-                            "direction": "Outbound",
                             "priority": 101
                         }
                     }

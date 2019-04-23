@@ -32,9 +32,7 @@ function create_bb_group {
     # Options:
     #  hardcoded group id - neds to be the same on NFS server and client
     #  group name
-    groupadd \
-        -g "${BBS_GID}" \
-        "${BBS_GROUP}"
+    groupadd -fg "${BBS_GID}" "${BBS_GROUP}"
 
     log "Bitbucket Server group has been created"
 }
@@ -49,7 +47,7 @@ function create_bb_user {
     #  same goes for group id
     #  a comment for the user
     #  username
-    useradd -m -d "${BBS_HOME}" \
+    id -u ${BBS_USER} >/dev/null 2>&1 || useradd -m -d "${BBS_HOME}" \
         -s /bin/bash \
         -u "${BBS_UID}" \
         -g "${BBS_GID}" \
@@ -355,7 +353,7 @@ function bbs_prepare_installer_settings {
 
     cat <<EOT >> "${BBS_INSTALLER_VARS}"
 app.bitbucketHome=${home}
-app.defaultInstallDir=/opt/atlassian/bitbucket/${version}
+app.defaultInstallDir=${BBS_INSTALL_DIR}
 app.install.service\$Boolean=true
 executeLauncherAction\$Boolean=false
 httpPort=7990
@@ -406,6 +404,8 @@ function bbs_prepare_properties {
     local hazelcastSubscriptionId="${BBS_HAZELCAST_SUBSCRIPTION_ID}"
 
     local esBaseUrl="${BBS_ES_BASE_URL}"
+    [ -n "$(echo ${BBS_URL} | grep -i 'https')" ] && local secure="true" || local secure="false"
+
 
     local file_temp="${BBS_HOME}/bitbucket.properties"
     local file_target="${BBS_SHARED_HOME}/bitbucket.properties"
@@ -433,6 +433,8 @@ hazelcast.network.azure.group.name=${hazelcastGroupName}
 hazelcast.network.azure.subscription.id=${hazelcastSubscriptionId}
 
 plugin.search.elasticsearch.baseurl=${esBaseUrl}
+
+server.secure=${secure}
 EOT
 
     chown "${BBS_USER}":"${BBS_GROUP}" "${file_temp}"
@@ -447,6 +449,40 @@ function install_oms_linux_agent {
     atl_log install_oms_linx_agent  "Installing OMS Linux Agent with workspace id: ${OMS_WORKSPACE_ID} and primary key: ${OMS_PRIMARY_KEY}"
     wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w "${OMS_WORKSPACE_ID}" -s "${OMS_PRIMARY_KEY}" -d opinsights.azure.com
     atl_log install_oms_linx_agent  "Finished installing OMS Linux Agent!"
+  fi
+}
+
+function download_appinsights_jars {
+  atl_log download_appinsights_jars "Downloading MS AppInsight Jars"
+  JARS="applicationinsights-core-${APPINSIGHTS_VER}.jar applicationinsights-web-${APPINSIGHTS_VER}.jar applicationinsights-collectd-${APPINSIGHTS_VER}.jar" 
+  for aJar in $(echo $JARS)
+  do
+     curl -LO https://github.com/Microsoft/ApplicationInsights-Java/releases/download/${APPINSIGHTS_VER}/${aJar}
+     if [ $aJar != "applicationinsights-collectd-${APPINSIGHTS_VER}.jar" ]
+     then
+          atl_log download_appinsights_jars "Copying appinsights jar: ${aJar} to ${1}"
+          cp -fp ${aJar} ${1}
+     fi
+  done
+}
+
+function install_appinsights {
+  atl_log install_appinsights "Installation MS App Insights"
+  atl_log install_appinsights "Have AppInsights Key? |${APPINSIGHTS_INSTRUMENTATION_KEY}|"
+  if [ -n "${APPINSIGHTS_INSTRUMENTATION_KEY}" ] 
+  then 
+     atl_log install_appinsights "Installing App Insights"
+     download_appinsights_jars ${BBS_INSTALL_DIR}/app/WEB-INF/lib
+
+     atl_log install_appinsights "Configuring App Insights filter: ${BBS_INSTALL_DIR}/app/WEB-INF/classes/bitbucket-plugin.xml"
+     cp -p ${BBS_INSTALL_DIR}/app/WEB-INF/classes/bitbucket-plugin.xml ${BBS_INSTALL_DIR}/app/WEB-INF/classes/bitbucket-plugin.xml.orig
+     sed 's_</atlassian-plugin>_<servlet-filter key="applicationInsightsWebFilter" class="com.microsoft.applicationinsights.web.internal.WebRequestTrackingFilter"> <url-pattern>/*</url-pattern> <location>after-encoding</location> <system>true</system> <dispatcher>REQUEST</dispatcher> <dispatcher>FORWARD</dispatcher> <dispatcher>ERROR</dispatcher> <dispatcher>INCLUDE</dispatcher> </servlet-filter> <servlet-context-listener name="applicationInsightsWebListener" key="applicationInsightsWebListener" class="com.microsoft.applicationinsights.web.internal.ApplicationInsightsServletContextListener"/> </atlassian-plugin>_' ${BBS_INSTALL_DIR}/app/WEB-INF/classes/bitbucket-plugin.xml.orig > ${BBS_INSTALL_DIR}/app/WEB-INF/classes/bitbucket-plugin.xml
+
+     atl_log install_appinsights "Configuring App Insights template: ${BBS_INSTALL_DIR}/app/WEB-INF/classes/ApplicationInsights.xml"
+     envsubst '$APPINSIGHTS_INSTRUMENTATION_KEY' < ApplicationInsights.xml.template > ${BBS_INSTALL_DIR}/app/WEB-INF/classes/ApplicationInsights.xml
+
+     #cp -fp ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh.orig
+     #sed 's/export CATALINA_OPTS/CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dconfluence.hazelcast.jmx.enable=true -Dconfluence.hibernate.jmx.enable=true"\nexport CATALINA_OPTS/' ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh.orig > ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh
   fi
 }
 
@@ -467,6 +503,10 @@ function bbs_install {
     bbs_run_installer
 
     log "Done downloading and running Bitbucket Server installer"
+
+    atl_log bbs_install "Configuring app insights..."
+    install_appinsights
+    atl_log bbs_install "Done app insights!"
 }
 
 function install_common {
@@ -490,6 +530,8 @@ function install_nfs {
 }
 
 function install_bbs {
+    env | sort 
+
     # NFS_SERVER_IP comes from outside
     BBS_NFS_SERVER_IP="${NFS_SERVER_IP}"
 
@@ -515,8 +557,39 @@ function install_unsupported {
     error "Unsupported installation option, abort"
 }
 
+function uninstall_bbs {
+    log "Stopping Bitbucket Server..."  
+    service atlbitbucket stop
+
+    log "Unmounting ${BBS_SHARED_HOME}"
+    umount ${BBS_SHARED_HOME}
+
+    log "Unmounting ${NFS_INSTALLER_DIR}"
+    umount ${NFS_INSTALLER_DIR}
+
+    log "Removing ${BBS_INSTALL_DIR}"
+    rm -rf "${BBS_INSTALL_DIR}"
+
+    log "Removing ${BBS_HOME}"
+    rm -rf "${BBS_HOME}"
+    rm /etc/init.d/atlbitbucket
+    userdel ${BBS_USER}
+}
+
+
+###
+## Start here
+###
+
+# Spit out args
+for (( i=1; i<="$#"; i++ ))
+do
+  atl_log main "Arg $i: ${!i}"
+done
+
 case "$1" in
     nfs) install_nfs;;
     bbs) install_bbs;;
+    uninstall_bbs) uninstall_bbs;;
     *) install_unsupported;;
 esac

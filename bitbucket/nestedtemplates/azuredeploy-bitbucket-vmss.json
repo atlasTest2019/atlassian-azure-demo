@@ -196,6 +196,10 @@
             "metadata": {
                 "description": "The secondary key of the Azure Operations Management Suite (OMS) workspace."
             }
+        },
+        "appInsightsInstrumentKey": {
+            "type": "string",
+            "defaultValue": ""
         }
     },
     "variables": {
@@ -251,6 +255,8 @@
                 "[concat('BBS_HAZELCAST_GROUP_NAME', '=\"', resourceGroup().name, '\" ')]",
                 "[concat('BBS_HAZELCAST_SUBSCRIPTION_ID', '=\"', subscription().subscriptionId, '\" ')]",
                 "[concat('BBS_ES_BASE_URL', '=\"http://', variables('elasticsearch').lbIp, ':9200/\" ')]",
+                "[concat('APPINSIGHTS_VER', '=\"', '2.3.1', '\" ')]",
+                "[concat('APPINSIGHTS_INSTRUMENTATION_KEY', '=\"', parameters('appInsightsInstrumentKey'), '\" ')]",
                 "[concat('OMS_WORKSPACE_ID', '=\"', parameters('workspaceId'), '\" ')]",
                 "[concat('OMS_PRIMARY_KEY', '=\"', parameters('workspacePrimaryKey'), '\" ')]",
                 "[concat('OMS_SECONDARY_KEY', '=\"', parameters('workspaceSecondaryKey'), '\" ')]"
@@ -375,7 +381,8 @@
                                         "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
                                         "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
                                         "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]"
+                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]",
+                                        "[concat(uri(parameters('_artifactsLocation'), 'templates/ApplicationInsights.xml.template'), parameters('_artifactsLocationSasToken'))]"
                                     ],
                                     "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
                                 }
@@ -403,7 +410,7 @@
     "outputs": {
         "cmd": {
             "type": "string",
-            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', 'ssh://', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs')]"
+            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs')]"
         },
         "clusterName": {
             "type": "string",

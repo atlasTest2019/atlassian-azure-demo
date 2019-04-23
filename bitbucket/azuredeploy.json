@@ -425,7 +425,7 @@
         },
         "enableApplicationInsights": {
             "type": "bool",
-            "defaultValue": false,
+            "defaultValue": true,
             "metadata": {
                 "description": "Enable Azure Application Insights."
             }

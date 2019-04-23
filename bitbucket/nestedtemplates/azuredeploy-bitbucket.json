@@ -365,6 +365,10 @@
                 "description": "Enable Azure Operational Insights."
             }
         },
+        "enableApplicationInsights": {
+            "type": "bool",
+            "defaultValue": true
+        },
         "workspaceSku": {
             "type": "string",
             "defaultValue": "Free",
@@ -395,6 +399,7 @@
         "nfsVmTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-bitbucket-nfs.json', parameters('_artifactsLocationSasToken')))]",
         "workspaceTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-workspace.json', parameters('_artifactsLocationSasToken')))]",
         "analyticsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-analytics.json', parameters('_artifactsLocationSasToken')))]",
+        "appInsightsTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-app-insights.json', parameters('_artifactsLocationSasToken')))]",
         "esTemplateUri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/azuredeploy-elasticsearch.json', parameters('_artifactsLocationSasToken')))]",
         "elasticsearch": {
             "dataDiskSize": "[parameters('esDataDiskSize')]",
@@ -549,6 +554,28 @@
                     },
                     "enableAnalytics": {
                         "value": "[parameters('enableAnalytics')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-05-01",
+            "name": "appInsightsTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "condition": "[parameters('enableApplicationInsights')]",
+            "dependsOn": [
+                "workspaceTemplate",
+                "dbTemplate"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('appInsightsTemplateUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
                     }
                 }
             }
@@ -801,6 +828,9 @@
                     },
                     "workspaceSecondaryKey": {
                         "value": "[if(parameters('enableAnalytics'), reference('workspaceTemplate').outputs.workspaceSecondaryKey.value, '')]"
+                    },
+                    "appInsightsInstrumentKey": {
+                        "value": "[if(parameters('enableApplicationInsights'), reference('appInsightsTemplate').outputs.instrumentkey.value, '')]"
                     }
                 }
             }
@@ -846,6 +876,10 @@
         "sqlServerFqdn": {
             "type": "string",
             "value": "[reference('dbTemplate').outputs.sqlServerFqdn.value]"
+        },
+        "appInsightsName": {
+            "type": "string",
+            "value": "[if(parameters('enableApplicationInsights'), reference('appInsightsTemplate').outputs.appInsightsName.value, '')]"
         },
         "dbDatabaseServerName": {
             "type": "string",

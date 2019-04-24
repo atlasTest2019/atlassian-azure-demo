@@ -230,26 +230,18 @@
                 }
             }
         },
-        "bitbucket": {
-            "license": "[parameters('license')]",
-            "admin": {
-                "username": "[if(equals(parameters('bitbucketAdminUsername'),'ssh'), parameters('adminUsername'), parameters('bitbucketAdminUsername'))]",
-                "password": "[parameters('bitbucketAdminPassword')]",
-                "fullName": "[parameters('bitbucketAdminName')]",
-                "email": "[parameters('bitbucketAdminEmail')]"
-            }
-        },
+        "username": "[if(equals(parameters('bitbucketAdminUsername'),'ssh'), parameters('adminUsername'), parameters('bitbucketAdminUsername'))]",
         "env": {
             "SQL": [
                 "[concat('SQL_USER', '=\"', parameters('azureSqlUsername'), '\" ')]",
                 "[concat('SQL_PASS', '=\"', parameters('azureSqlPassword'), '\" ')]"
             ],
             "BBS": [
-                "[concat('BBS_ADMIN', '=\"', variables('bitbucket').admin.username, '\" ')]",
-                "[concat('BBS_PASS', '=\"', variables('bitbucket').admin.password, '\" ')]",
-                "[concat('BBS_NAME', '=\"', variables('bitbucket').admin.fullName, '\" ')]",
-                "[concat('BBS_EMAIL', '=\"', variables('bitbucket').admin.email, '\" ')]",
-                "[concat('BBS_LICENSE', '=\"', variables('bitbucket').license, '\" ')]",
+                "[concat('BBS_ADMIN', '=\"', variables('username'), '\" ')]",
+                "[concat('BBS_PASS', '=\"', parameters('bitbucketAdminPassword'), '\" ')]",
+                "[concat('BBS_NAME', '=\"', parameters('bitbucketAdminName'), '\" ')]",
+                "[concat('BBS_EMAIL', '=\"', parameters('bitbucketAdminEmail'), '\" ')]",
+                "[concat('BBS_LICENSE', '=\"', parameters('license'), '\" ')]",
                 "[concat('BBS_HAZELCAST_PORT', '=\"', parameters('bbsHazelcastPort'), '\" ')]",
                 "[concat('BBS_HAZELCAST_CLUSTER_ID', '=\"', parameters('bbsHazelcastTag'), '\" ')]",
                 "[concat('BBS_HAZELCAST_GROUP_NAME', '=\"', resourceGroup().name, '\" ')]",
@@ -368,26 +360,27 @@
                     "extensionProfile": {
                         "extensions": [
                             {
-                            "name": "[concat(variables('vm').bbs.name, 'bbs-install-script')]",
-                            "properties": {
-                                "publisher": "Microsoft.Azure.Extensions",
-                                "type": "CustomScript",
-                                "typeHandlerVersion": "2.0",
-                                "autoUpgradeMinorVersion": true,
-                                "settings": {
-                                    "fileUris": [
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]",
-                                        "[concat(uri(parameters('_artifactsLocation'), 'templates/ApplicationInsights.xml.template'), parameters('_artifactsLocationSasToken'))]"
-                                    ],
-                                    "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
+                                "name": "[concat(variables('vm').bbs.name, 'bbs-install-script')]",
+                                "properties": {
+                                    "publisher": "Microsoft.Azure.Extensions",
+                                    "type": "CustomScript",
+                                    "typeHandlerVersion": "2.0",
+                                    "autoUpgradeMinorVersion": true,
+                                    "settings": {
+                                        "fileUris": [
+                                            "[concat(uri(parameters('_artifactsLocation'), 'scripts/log.sh'), parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'scripts/vm-disk-utils-0.1.sh') , parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'scripts/bbs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'scripts/nfs_settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'scripts/settings.sh'), parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'scripts/install.sh'), parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'templates/ApplicationInsights.xml.template'), parameters('_artifactsLocationSasToken'))]",
+                                            "[concat(uri(parameters('_artifactsLocation'), 'templates/bitbucket-collectd.conf.template'), parameters('_artifactsLocationSasToken'))]"
+                                        ],
+                                        "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
+                                    }
                                 }
                             }
-                        }
                         ]
                     }
                 }

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 BBS_USER="atlbitbucket"
 BBS_GROUP="atlbitbucket"

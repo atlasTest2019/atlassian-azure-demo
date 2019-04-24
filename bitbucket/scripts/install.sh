@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 source ./log.sh
 source ./settings.sh
@@ -435,6 +434,7 @@ hazelcast.network.azure.subscription.id=${hazelcastSubscriptionId}
 plugin.search.elasticsearch.baseurl=${esBaseUrl}
 
 server.secure=${secure}
+jmx.enabled=true
 EOT
 
     chown "${BBS_USER}":"${BBS_GROUP}" "${file_temp}"
@@ -449,6 +449,65 @@ function install_oms_linux_agent {
     atl_log install_oms_linx_agent  "Installing OMS Linux Agent with workspace id: ${OMS_WORKSPACE_ID} and primary key: ${OMS_PRIMARY_KEY}"
     wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w "${OMS_WORKSPACE_ID}" -s "${OMS_PRIMARY_KEY}" -d opinsights.azure.com
     atl_log install_oms_linx_agent  "Finished installing OMS Linux Agent!"
+  fi
+}
+
+function configure_bitbucket_jmx {
+  atl_log configure_bitbucket_jmx "Switching on BitBucket JMX"
+
+  cp -p ${BBS_INSTALL_DIR}/bin/set-jmx-opts.sh ${BBS_INSTALL_DIR}/bin/set-jmx-opts.sh.orig
+  echo "export JMX_OPTS='-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false'" > ${BBS_INSTALL_DIR}/bin/set-jmx-opts.sh
+}
+
+
+function check_collectd_java_linking {
+  # https://github.com/collectd/collectd/issues/635
+  # Applied to both RHEL 7.5, Ubuntu 18.04 (but not 16.04)
+  [ -n "$(ldd /usr/lib/collectd/java.so | grep 'not found')" ] && atl_log check_collectd_java_linking "CollectD Java linking error found!!"
+}
+
+function install_appinsights_collectd {
+  # Have moved collectd to run after BitBucket startup - doesn't start up well with all the mounting/remounting/Confluence not being up.
+  if [ -n "${APPINSIGHTS_INSTRUMENTATION_KEY}" ]
+  then
+    atl_log install_appinsights_collectd "Configuring collectd to publish BitBucket JMX"
+
+    atl_log install_appinsights_collectd  "Configuring App Insights template: ${BBS_INSTALL_DIR}/app/WEB-INF/classes/ApplicationInsights.xml"
+    envsubst '$APPINSIGHTS_INSTRUMENTATION_KEY $APPINSIGHTS_VER' < bitbucket-collectd.conf.template > bitbucket-collectd.conf
+
+    if [[ -n ${IS_REDHAT} ]]
+    then
+      # https://bugs.centos.org/view.php?id=15495
+      pacapt install --noconfirm install collectd collectd-generic-jmx.x86_64 collectd-java.x86_64 collectd-sensors.x86_64 collectd-rrdtool.x86_64 glib2.x86_64
+      ln -sf /usr/lib64/collectd /usr/lib/collectd
+
+      # https://github.com/collectd/collectd/issues/635
+      ln -sf /etc/alternatives/jre/lib/amd64/server/libjvm.so /lib64
+      check_collectd_java_linking
+      cp -fp bitbucket-collectd.conf /etc/collectd.d
+      chmod +r /etc/collectd.d/*.conf
+
+      # Disable SELINUX - prevents Collectd logfile writing to /var/log
+      # https://serverfault.com/questions/797039/collectd-permission-denied-to-log-file
+      setenforce 0
+      sed --in-place=.bak 's/SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+    else
+      pacapt install --noconfirm collectd
+      ln -sf /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so /lib/x86_64-linux-gnu/
+      check_collectd_java_linking
+      cp -fp bitbucket-collectd.conf /etc/collectd/collectd.conf
+      chmod +r /etc/collectd/collectd.conf
+    fi
+
+    atl_log download_appinsights_jars "Copying collectd appinsights jar to /usr/share/collectd/java"
+    cp -fp applicationinsights-collectd*.jar /usr/share/collectd/java/
+
+    atl_log install_appinsights_collectd "Starting collectd..."
+    systemctl start collectd
+    
+    # Bouncing collectd - cgroups issue with Azure wagent
+    sleep 5
+    systemctl restart collectd
   fi
 }
 
@@ -481,8 +540,7 @@ function install_appinsights {
      atl_log install_appinsights "Configuring App Insights template: ${BBS_INSTALL_DIR}/app/WEB-INF/classes/ApplicationInsights.xml"
      envsubst '$APPINSIGHTS_INSTRUMENTATION_KEY' < ApplicationInsights.xml.template > ${BBS_INSTALL_DIR}/app/WEB-INF/classes/ApplicationInsights.xml
 
-     #cp -fp ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh.orig
-     #sed 's/export CATALINA_OPTS/CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dconfluence.hazelcast.jmx.enable=true -Dconfluence.hibernate.jmx.enable=true"\nexport CATALINA_OPTS/' ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh.orig > ${ATL_CONFLUENCE_INSTALL_DIR}/bin/setenv.sh
+     configure_bitbucket_jmx
   fi
 }
 
@@ -548,8 +606,9 @@ function install_bbs {
     bbs_install
     
     log "Starting Bitbucket Server..."    
-    service atlbitbucket start
+    systemctl start atlbitbucket
 
+    install_appinsights_collectd
     log "Done configuring Bitbucket Server node!"
 }
 
@@ -559,7 +618,7 @@ function install_unsupported {
 
 function uninstall_bbs {
     log "Stopping Bitbucket Server..."  
-    service atlbitbucket stop
+    systemctl stop atlbitbucket
 
     log "Unmounting ${BBS_SHARED_HOME}"
     umount ${BBS_SHARED_HOME}
@@ -576,16 +635,48 @@ function uninstall_bbs {
     userdel ${BBS_USER}
 }
 
+function install_pacapt {
+  wget -O /usr/local/bin/pacapt https://github.com/icy/pacapt/raw/ng/pacapt
+  sudo chmod 755 /usr/local/bin/pacapt
+}
 
-###
+function install_redhat_epel_if_needed {
+  if [[ -n ${IS_REDHAT} ]]
+  then
+	  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+	  yum install -y ./epel-release-latest-*.noarch.rpm
+  fi
+}
+
+function install_core_dependencies {
+  pacapt update --noconfirm
+  # Packages done on different lines as yum command will fail if unknown package defined. Some future proofing.
+  pacapt install --noconfirm cifs-utils
+  pacapt install --noconfirm curl
+  pacapt install --noconfirm rsync
+  pacapt install --noconfirm netcat
+  pacapt install --noconfirm jq
+  pacapt install --noconfirm gettext
+
+  # nc/nmap-ncat needed on RHEL jumpbox for SSH proxying
+  [ -n "${IS_REDHAT}" ] && pacapt install --noconfirm java-1.8.0-openjdk-headless nc || pacapt install --noconfirm openjdk-8-jre-headless
+}
+
+
+###############################################################################################################
 ## Start here
-###
+###############################################################################################################
 
 # Spit out args
 for (( i=1; i<="$#"; i++ ))
 do
   atl_log main "Arg $i: ${!i}"
 done
+
+IS_REDHAT=$(cat /etc/os-release | egrep '^ID' | grep rhel)
+install_pacapt
+install_redhat_epel_if_needed
+install_core_dependencies
 
 case "$1" in
     nfs) install_nfs;;

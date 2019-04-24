@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 function atl_log {
   local scope=$1

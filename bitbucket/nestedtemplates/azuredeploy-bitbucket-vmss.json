@@ -140,13 +140,25 @@
                 "description": "Bitbucket Server administrator email."
             }
         },
-        "azureSqlUsername": {
+        "dbType": {
             "type": "string",
+            "allowedValues": [
+                "sqlserver",
+                "postgres",
+                "mysql"
+            ],
+            "defaultValue": "sqlserver",
             "metadata": {
-                "description": "Username to access Bitbucket Server database."
+                "description": "The database type."
             }
         },
-        "azureSqlPassword": {
+        "jdbcUrl": {
+            "type": "string"
+        },
+        "jdbcUserName": {
+            "type": "string"
+        },
+        "dbPassword": {
             "type": "securestring",
             "metadata": {
                 "description": "Password to access Bitbucket Server database."
@@ -168,9 +180,6 @@
             "type": "string"
         },
         "appGtwyBEndPoolName": {
-            "type": "string"
-        },
-        "sqlServerFqdn": {
             "type": "string"
         },
         "bbsBaseUrl": {
@@ -231,10 +240,13 @@
             }
         },
         "username": "[if(equals(parameters('bitbucketAdminUsername'),'ssh'), parameters('adminUsername'), parameters('bitbucketAdminUsername'))]",
+        "jdbcDriver": "[if(equals(parameters('dbType'), 'sqlserver'), 'com.microsoft.sqlserver.jdbc.SQLServerDriver', 'org.postgresql.Driver')]",
         "env": {
             "SQL": [
-                "[concat('SQL_USER', '=\"', parameters('azureSqlUsername'), '\" ')]",
-                "[concat('SQL_PASS', '=\"', parameters('azureSqlPassword'), '\" ')]"
+                "[concat('SQL_PASS', '=\"', parameters('dbPassword'), '\" ')]",
+                "[concat('JDBC_DRIVER', '=\"', variables('jdbcDriver'), '\" ')]",
+                "[concat('JDBC_URL', '=\"', parameters('jdbcUrl'), '\" ')]",
+                "[concat('JDBC_USER', '=\"', parameters('jdbcUserName'), '\" ')]"
             ],
             "BBS": [
                 "[concat('BBS_ADMIN', '=\"', variables('username'), '\" ')]",
@@ -377,7 +389,7 @@
                                             "[concat(uri(parameters('_artifactsLocation'), 'templates/ApplicationInsights.xml.template'), parameters('_artifactsLocationSasToken'))]",
                                             "[concat(uri(parameters('_artifactsLocation'), 'templates/bitbucket-collectd.conf.template'), parameters('_artifactsLocationSasToken'))]"
                                         ],
-                                        "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
+                                        "commandToExecute": "[concat(variables('data').SQL, variables('data').BBS, ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs 1>&1 2>&1 > ./bbsnfs.install-$(uname -n).log')]"
                                     }
                                 }
                             }
@@ -403,7 +415,7 @@
     "outputs": {
         "cmd": {
             "type": "string",
-            "value": "[concat(variables('data').SQL, variables('data').BBS, ' SQL_HOST=\"', parameters('sqlServerFqdn'), '\"', ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs')]"
+            "value": "[concat(variables('data').SQL, variables('data').BBS, ' NFS_SERVER_IP=\"', parameters('nfsPrivateIpAddress'), '\"', ' BBS_URL=\"', parameters('bbsBaseUrl'), '\"', ' BBS_SSH_URL=\"', parameters('sshLbBaseUrl'), ':7999', '\"', ' bash install.sh bbs')]"
         },
         "clusterName": {
             "type": "string",

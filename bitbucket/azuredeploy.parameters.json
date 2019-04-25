@@ -11,10 +11,10 @@
                 "adminUsername": {
                         "value": "bbadmin"
                 },
-                "azureSqlUsername": {
+                "dbUsername": {
                         "value": "bbsqluser"
                 },
-                "azureSqlPassword": {
+                "dbPassword": {
                         "value": "P@55w0rd"
                 },
                 "bitbucketAdminPassword": {

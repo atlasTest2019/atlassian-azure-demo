@@ -3,25 +3,19 @@
 source ./log.sh
 source ./settings.sh
 
-function ensure_jq {
-    log "Making sure jq is installed. We need it during the installation process"
-
-    apt-get update
-    apt-get install -y jq
-
-    log "jq has been installed"
-}
-
 function ensure_atlhome {
     log "Making sure Atlassian home directory exists"
-
     mkdir -p "${ATL_HOME}"
-
     log "Atlassian home has been created"
 }
 
 function ensure_prerequisites {
-    ensure_jq
+    
+    IS_REDHAT=$(cat /etc/os-release | egrep '^ID' | grep rhel)
+    install_pacapt
+    install_redhat_epel_if_needed
+    install_core_dependencies
+
     ensure_atlhome
 }
 
@@ -74,10 +68,7 @@ function prepare_datadisks {
 
 function nfs_install_server {
     log "Installing NFS server..."
-
-    apt-get update
-    apt-get install -y nfs-kernel-server
-
+    pacapt install --noconfirm nfs-kernel-server
     log "NFS server has been installed"
 }
 
@@ -195,10 +186,7 @@ function nfs_configure {
 
 function bbs_install_nfs_client {
     log "Installing NFS client"
-
-    apt-get update
-    apt-get install -y nfs-common
-
+    pacapt install --noconfirm nfs-common
     log "Done installing NFS client"
 }
 
@@ -384,54 +372,34 @@ function bbs_stop {
 
 function bbs_prepare_properties {
     log "Generating 'bitbucket.properties' configuration file"
-
-    local dbhost="${SQL_HOST}"
-    local dbuser="${SQL_USER}"
-    local dbpass="${SQL_PASS}"
-
-    local license="${BBS_LICENSE}"
-    local baseUrl="${BBS_URL}"
-    local sshBaseUrl="${BBS_SSH_URL}"
-    local adminUser="${BBS_ADMIN}"
-    local adminPass="${BBS_PASS}"
-    local adminName="${BBS_NAME}"
-    local adminEmail="${BBS_EMAIL}"
-    
-    local hazelcastPort="${BBS_HAZELCAST_PORT}"
-    local hazelcastClusterId="${BBS_HAZELCAST_CLUSTER_ID}"
-    local hazelcastGroupName="${BBS_HAZELCAST_GROUP_NAME}"
-    local hazelcastSubscriptionId="${BBS_HAZELCAST_SUBSCRIPTION_ID}"
-
-    local esBaseUrl="${BBS_ES_BASE_URL}"
     [ -n "$(echo ${BBS_URL} | grep -i 'https')" ] && local secure="true" || local secure="false"
-
 
     local file_temp="${BBS_HOME}/bitbucket.properties"
     local file_target="${BBS_SHARED_HOME}/bitbucket.properties"
 
     cat <<EOT >> "${file_temp}"
-jdbc.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
-jdbc.url=jdbc:sqlserver://${dbhost}:1433;database=bitbucket-db;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
-jdbc.user=${dbuser}
-jdbc.password=${dbpass}
+jdbc.driver=${JDBC_DRIVER}
+jdbc.url=${JDBC_URL}
+jdbc.user=${JDBC_USER}
+jdbc.password=${SQL_PASS}
 
-setup.license=${license}
+setup.license=${BBS_LICENSE}
 setup.displayName=Bitbucket
-setup.baseUrl=${baseUrl}
-setup.sysadmin.username=${adminUser}
-setup.sysadmin.password=${adminPass}
-setup.sysadmin.displayName=${adminName}
-setup.sysadmin.emailAddress=${adminEmail}
+setup.baseUrl=${BBS_URL}
+setup.sysadmin.username=${BBS_ADMIN}
+setup.sysadmin.password=${BBS_PASS}
+setup.sysadmin.displayName=${BBS_NAME}
+setup.sysadmin.emailAddress=${BBS_EMAIL}
 
-plugin.ssh.baseurl=${sshBaseUrl}
+plugin.ssh.baseurl=${BBS_SSH_URL}
 
-hazelcast.port=${hazelcastPort}
+hazelcast.port=${BBS_HAZELCAST_PORT}
 hazelcast.network.azure=true
-hazelcast.network.azure.cluster.id=${hazelcastClusterId}
-hazelcast.network.azure.group.name=${hazelcastGroupName}
-hazelcast.network.azure.subscription.id=${hazelcastSubscriptionId}
+hazelcast.network.azure.cluster.id=${BBS_HAZELCAST_CLUSTER_ID}
+hazelcast.network.azure.group.name=${BBS_HAZELCAST_GROUP_NAME}
+hazelcast.network.azure.subscription.id=${BBS_HAZELCAST_SUBSCRIPTION_ID}
 
-plugin.search.elasticsearch.baseurl=${esBaseUrl}
+plugin.search.elasticsearch.baseurl=${BBS_ES_BASE_URL}
 
 server.secure=${secure}
 jmx.enabled=true
@@ -552,15 +520,28 @@ function bbs_configure {
     log "Done configuring Bitbucket Server application"
 }
 
+function install_postgres_cert_if_needed {
+    if [[ -n $(echo $JDBC_URL | grep 'postgres') ]]
+    then
+        log "Downloading + configuring Azure Postgres cert"
+        # https://docs.microsoft.com/en-us/azure/postgresql/concepts-ssl-connection-security
+        curl -LO https://www.digicert.com/CACerts/BaltimoreCyberTrustRoot.crt
+        openssl x509 -inform DER -in BaltimoreCyberTrustRoot.crt -text -out root.crt
+
+        mkdir -p ${BBS_HOME}/.postgresql
+        cp -p root.crt ${BBS_HOME}/.postgresql
+    fi
+}
+
+
 function bbs_install {
     log "Downloading and running Bitbucket Server installer"
 
     log "Copy Bitbucket Server installer"
     cp "${NFS_INSTALLER_DIR}/installer" .
-
     bbs_run_installer
 
-    log "Done downloading and running Bitbucket Server installer"
+    install_postgres_cert_if_needed
 
     atl_log bbs_install "Configuring app insights..."
     install_appinsights
@@ -673,14 +654,11 @@ do
   atl_log main "Arg $i: ${!i}"
 done
 
-IS_REDHAT=$(cat /etc/os-release | egrep '^ID' | grep rhel)
-install_pacapt
-install_redhat_epel_if_needed
-install_core_dependencies
-
 case "$1" in
     nfs) install_nfs;;
     bbs) install_bbs;;
     uninstall_bbs) uninstall_bbs;;
     *) install_unsupported;;
 esac
+
+atl_log main "Finished installation!"

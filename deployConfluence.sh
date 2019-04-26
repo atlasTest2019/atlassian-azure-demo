@@ -12,4 +12,4 @@ export container_name="confluencete"
 az group create                        \
     --location ${location}             \
     --resource-group ${resource_group}
-az group deployment create --resource-group ${resource_group} --template-file azuredeploy.json --parameters /azuredeploy.parameters.json
+az group deployment create --resource-group ${resource_group} --template-file azuredeploy.json --parameters azuredeploy.parameters.json

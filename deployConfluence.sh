@@ -1,0 +1,1 @@
+azcopy --source atlassian-azure-deployment/confluence/ --destination https://atconfluenceoio.blob.core.windows.net/confluencetemplateupload/ --recursive --dest-sas '?sv=2018-03-28&ss=bfqt&srt=sco&sp=rwdlacup&se=2019-04-28T22:54:44Z&st=2019-04-25T14:54:44Z&spr=https&sig=zccE2KEEqUadgGcK5ySyQ8fmab1Q%2BQFHtV08PPrZDC8%3D'

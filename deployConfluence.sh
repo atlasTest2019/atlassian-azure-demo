@@ -1,1 +1,15 @@
-azcopy --source atlassian-azure-deployment/confluence/ --destination https://atconfluenceoio.blob.core.windows.net/confluencetemplateupload/ --recursive --dest-sas '?sv=2018-03-28&ss=bfqt&srt=sco&sp=rwdlacup&se=2019-04-28T22:54:44Z&st=2019-04-25T14:54:44Z&spr=https&sig=zccE2KEEqUadgGcK5ySyQ8fmab1Q%2BQFHtV08PPrZDC8%3D'
+#!/bin/bash
+################################################################################
+# atlassian-azure-deployment / deploy jira on azure
+################################################################################
+export location="westeurope"
+export resource_group="atdemo-confluence-run"
+export account_name="atdemoconfluenceoio"
+export account_sku="Standard_LRS"
+export container_name="confluencete"
+
+
+az group create                        \
+    --location ${location}             \
+    --resource-group ${resource_group}
+az group deployment create --resource-group ${resource_group} --template-file azuredeploy.json --parameters /azuredeploy.parameters.json

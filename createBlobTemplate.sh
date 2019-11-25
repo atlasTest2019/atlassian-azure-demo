@@ -4,7 +4,7 @@
 ################################################################################
 
 export location="westeurope"
-export resource_group="atdemo-confluence-blob"
+export resource_group="AtlassianTest"
 export account_name="atdemoconfluenceoio"
 export account_sku="Standard_LRS"
 export container_name="confluencetemplateupload"

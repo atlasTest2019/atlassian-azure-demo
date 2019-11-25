@@ -3,7 +3,7 @@
 # atlassian-azure-deployment / deploy jira on azure
 ################################################################################
 export location="westeurope"
-export resource_group="atdemo-confluence-run"
+export resource_group="AtlassianTest"
 export account_name="atdemoconfluenceoio"
 export account_sku="Standard_LRS"
 export container_name="confluencete"

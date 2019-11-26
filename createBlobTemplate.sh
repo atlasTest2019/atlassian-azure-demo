@@ -28,4 +28,5 @@ az storage container create  --connection-string ${AZURE_STORAGE_CONNECTION_STRI
 export AZURE_STORAGE_ACCOUNT=${account_name}
 export AZURE_STORAGE_SAS_TOKEN=`az storage container generate-sas --connection-string ${AZURE_STORAGE_CONNECTION_STRING} -n ${container_name} --permissions dlrw --expiry '2019-12-30' --output tsv`
 
-azcopy --source atlassian-azure-demo/confluence/ --destination https://${account_name}.blob.core.windows.net/${container_name}/ --recursive --dest-sas '?'${AZURE_STORAGE_SAS_TOKEN}
+# azcopy cp "atlassian-azure-demo/confluence/" "https://atdemoconfluenceoio.blob.core.windows.net/confluencetemplateupload/?sv=2019-02-02&ss=bfqt&srt=sco&sp=rwdlacup&se=2019-12-30T05:45:57Z&st=2019-11-25T21:45:57Z&spr=https&sig=vCBnCdLz65dSKIDVyKWHbVmFKGO1SCmOVJqK8FaCg%2Bw%3D" --recursive=true
+azcopy --source atlassian-azure-demo/confluence/ --destination https://${account_name}.blob.core.windows.net/${container_name}/'?'${AZURE_STORAGE_SAS_TOKEN}# --recursive=true 

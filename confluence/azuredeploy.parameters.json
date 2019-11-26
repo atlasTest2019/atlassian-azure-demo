@@ -18,7 +18,7 @@
             "value": "admin123"
         },
         "_artifactsLocation": {
-            "value": "https://atdemoconfluenceoio.blob.core.windows.net/confluencetemplateupload/"
+            "value": "https://atdemoconfluenceoio.blob.core.windows.net/confluencetemplateupload/confluence"
             
         },
         "_artifactsLocationSasToken": {
